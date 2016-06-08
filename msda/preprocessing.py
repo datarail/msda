@@ -10,13 +10,14 @@ mapping_url = 'http://www.uniprot.org/mapping/'
 df_map = pd.read_csv('resources/Uniprot_sec_to_prim.csv', sep='\t')
 
 
-def pd_import(excel_file, sample_list):
+def pd_import(excel_file, sample_list=[]):
     df = pd.read_excel(excel_file)
     columns = [re.sub(" ", "_", str(i)) for i in df.columns]
-    
-    sample_index = [columns.index(s) for s in columns
+
+    if sample_list:
+        sample_index = [columns.index(s) for s in columns
                     if "_sn_scaled" in s]
-    columns[sample_index[0]: sample_index[-1]+1] = sample_list
+        columns[sample_index[0]: sample_index[-1]+1] = sample_list
     df.columns = columns
     
     uniprot_id = [re.split('\|', i)[1] for i in df.Protein_Id]
