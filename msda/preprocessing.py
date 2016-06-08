@@ -44,8 +44,6 @@ def get_gene_names(uid):
 
     uid = re.split('\-', uid)[0]
 
-    # query_string = " ".join(uid_list)
-
     params = {
         'from': 'ACC',
         'to': 'GENENAME',
