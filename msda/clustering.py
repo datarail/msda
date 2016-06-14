@@ -23,8 +23,9 @@ def hierarchical_clustering(df, samples, plot_name='hc_plot.png'):
         pdist(df_nrm, metric='correlation'),
         method='complete')
     dendr = dendrogram(cell_line_clusters, labels=df_nrm.index)
-    plt.tight_layout()
     plt.ylabel('Pearson correlation distance')
+    plt.xticks(rotation=90)
+    plt.tight_layout()
     plt.savefig(plot_name)
     plt.clf()
 
