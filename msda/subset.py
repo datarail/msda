@@ -1,6 +1,7 @@
 import pandas as pd
 import requests
 import StringIO
+import xml.etree.ElementTree as ET
 
 def get_kinase_set(df):
 
@@ -18,32 +19,67 @@ def get_kinase_set(df):
 
   
     df_subset = df.loc[df.Protein_Id.isin(kinase_list)]
-    
     return df_subset
 
 
 
-def get_uniprot_id(entrez_id):
+# def get_uniprot_id(entrez_id):
+#     ''' mapping for proteins in kinome.org dataset '''
 
-    mapping_url = 'http://www.uniprot.org/mapping/'
+#     mapping_url = 'http://www.uniprot.org/mapping/'
 
-    params = {
-        'from': 'P_ENTREZGENEID',
-        'to': 'ACC',
-        'format': 'tab',
-        'query': entrez_id
-        }
+#     params = {
+#         'from': 'P_ENTREZGENEID',
+#         'to': 'ACC',
+#         'format': 'tab',
+#         'query': entrez_id
+#         }
 
-    r = requests.get(mapping_url, params)
+#     r = requests.get(mapping_url, params)
+#     r.raise_for_status()
+#     mp = r.text
+
+#     cmp = StringIO.StringIO(mp)
+#     df = pd.read_csv(cmp, sep='\t')
+#     try:
+#         name = re.split('\_', df.To[0])[0]
+#     except IndexError:
+#         print refseq
+#         name = 'not found'        
+#     return name
+
+
+def get_pfam_domain_acc(uniprot_id):
+    url = 'http://pfam.xfam.org/protein/%s?output=xml' % uniprot_id
+    r = requests.get(url)
     r.raise_for_status()
-    mp = r.text
+    xml = r.text
+    root = ET.fromstring(xml)
 
-    cmp = StringIO.StringIO(mp)
-    df = pd.read_csv(cmp, sep='\t')
-    try:
-        name = re.split('\_', df.To[0])[0]
-    except IndexError:
-        print refseq
-        name = 'not found'        
-    return name
+    for child in root[0]:
+        if 'matches' in child.tag:
+            pfam_matches = child      
 
+    if pfam_matches:
+        domain_acc = []
+        for match in pfam_matches:
+            domain_acc.append(match.attrib['accession'])
+    return domain_acc   
+
+
+            
+def get_subset(list, domain_list):
+
+    #protein_list = df.Protein_Id.tolist()
+    protein_subset = []
+    
+    for protein in list:
+        protein = re.split('\-', protein)[0]
+        domain_acc = get_pfam_domain_acc(protein)
+        common_list = set(domain_list).intersection(domain_acc)
+        if common_list:
+            protein_subset.append(protein)
+    return protein_subset        
+        
+    
+    
