@@ -9,6 +9,13 @@ mapping_url = 'http://www.uniprot.org/mapping/'
 
 df_map = pd.read_csv('resources/Uniprot_sec_to_prim.csv', sep='\t')
 
+delac_tr = ['C9JYP6']
+
+# delac_tr = open('resources/delac_tr.txt').readlines()
+# for i, line in enumerate(delac_tr):
+#     if line.startswith('Accession number'):
+#         delac_ids = [id.splitlines()[0] for id in delac_tr[i+2:]]
+
 
 def pd_import(excel_file, sample_list=[]):
     df = pd.read_excel(excel_file)
@@ -36,6 +43,9 @@ def pd_import(excel_file, sample_list=[]):
     for i, gs in enumerate(df.Gene_Symbol):
         if isinstance(gs, pd.datetime):
             df.Gene_Symbol.ix[i] = get_gene_names(df.Protein_Id.ix[i])
+
+    # Remove deleted uniprot ids
+    df = df[~df.Protein_Id.isin(delac_tr)]
     
     return df
 
@@ -69,5 +79,12 @@ def get_primary_ids(secondary_id):
 
 
 
+# sec_ids = []
     
-    
+# for i in range(3):
+#     df_ms = pd.read_excel('../data/tnbc/tnbc_ms_batch0%s.xlsx' % (i+1))
+#     uniprot_id = [re.split('\|', i)[1] for i in df_ms['Protein Id']]
+#     df_ms['Protein Id'] = uniprot_id
+#     df_ms.head()
+#     ids = list(set(df_ms['Protein Id'].tolist()).intersection(df_map.Secondary_ID.tolist()))
+#     sec_ids.append(ids)
