@@ -10,7 +10,13 @@ def get_uid(name):
     for hit in res['hits']:
         uid.append(hit['uniprot']['Swiss-Prot'])
         symbol.append(hit['symbol'])
-    return zip(symbol, uid)
+    dict = {s:i for s,i in zip(symbol, uid)}
+    try:
+        uid = dict[name]
+        out = uid
+    except KeyError:
+        out = dict
+    return out
 
     
 
