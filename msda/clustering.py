@@ -4,6 +4,7 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
 from sklearn.lda import LDA
+import numpy as np
 
 
 def normalize_min_max(df):
@@ -106,6 +107,27 @@ def plot_scikit_lda(X, y, label_dict, samples, plot_name='lda_plot.png'):
     plt.tight_layout
     plt.savefig(plot_name)
     plt.clf()
+
+
+def diff_exp(df, samples, figname, top=25):
+    df2 = df.copy()
+    df2.index = df2.Gene_Symbol
+    df2 = df2[samples]
+
+    std = [np.std(df2.loc[protein].values)
+           for protein in df2.index.values]
+    df2['Standard_Deviation'] = std
+    df2 = df2.sort('Standard_Deviation', ascending=False)
+    df_nrm = normalize_min_max(df2[samples].transpose()).transpose()
+    arr = df_nrm.ix[:top, samples].values
+    plt.pcolor(arr, cmap='Blues', edgecolor='k')
+    plt.gca().invert_yaxis()
+    plt.yticks([i+0.5 for i in range(top)], df_nrm.index.values[:top])
+    plt.xticks([i+0.5 for i in range(len(samples))], samples, rotation=90)
+    plt.colorbar()
+    plt.savefig(figname)
+    plt.clf()
+
 
 cell_line_response = {'A549': 'partial', 'Colo205': 'partial',
                       'DU145': 'partial', 'H1703': 'sensitive',
