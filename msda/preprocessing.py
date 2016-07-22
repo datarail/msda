@@ -26,7 +26,7 @@ def pd_import(excel_file, sample_list=[]):
                     if "_sn_scaled" in s]
         columns[sample_index[0]: sample_index[-1]+1] = sample_list
     df.columns = columns
-    
+
     uniprot_id = [re.split('\|', i)[1] for i in df.Protein_Id]
     df.Protein_Id = uniprot_id
 
@@ -46,7 +46,7 @@ def pd_import(excel_file, sample_list=[]):
 
     # Remove deleted uniprot ids
     df = df[~df.Protein_Id.isin(delac_tr)]
-    
+
     return df
 
 
