@@ -1,6 +1,6 @@
 import re
 import pandas as pd
-
+import phosphosite_client as pc
 
 def prune_list(peptide_list):
     tryptic_petides = [p for p in peptide_list if _is_tryptic(p)]
@@ -12,6 +12,7 @@ def prune_list(peptide_list):
         l3.append(score[2])
         l4.append(score[3])
         l5.append(score[4])
+
     df = pd.DataFrame(zip(tryptic_petides, l1, l2, l3, l4, l5),
                       columns=['sequence', 'starts_with_EorDorQ',
                                'starts_with_KKorRRorRK',
@@ -66,8 +67,16 @@ def score_(peptide_seq):
     return edq, kr, ked, length_crit, score
 
 
-def check_ptm_redundancy(df, filename):
-    df_ptm = pd.read_table(filename, index_col=False)
+def check_ptm_redundancy(df):
+
+    query_list = ['\t'.join(['human', p])
+                  for p in df.sequence.tolist()]
+    query_list.insert(0, 'species\tsequence')
+
+    query_string = '\n'.join(query_list)
+    df_ptm = pc.get_ptms(query_string)
+
+    # df_ptm = pd.read_table(filename, index_col=False)
     df_ptm['query_sequence'] = [seq.upper()
                                 for seq in df_ptm.Sequence.tolist()]
     site_list = []
@@ -75,9 +84,9 @@ def check_ptm_redundancy(df, filename):
 
     for seq in df.sequence.tolist():
         red = df_ptm.Protein[df_ptm.query_sequence == seq].tolist()
-        redundancy_list.append([pr for pr in red if type(pr) == str])
+        redundancy_list.append([pr for pr in red if type(pr) == unicode])
         sites = df_ptm.Site[df_ptm.query_sequence == seq].tolist()
-        site_list.append([s for s in sites if type(s) == str])
+        site_list.append([s for s in sites if type(s) == unicode])
 
     for i, l in enumerate(redundancy_list):
         if not l:
@@ -88,10 +97,10 @@ def check_ptm_redundancy(df, filename):
         if not ptm:
             site_list[i] = 'no PTM reported'
 
-    df_update = df.dopy()
+    df_update = df.copy()
     df_update['redundancy'] = redundancy_list
     df_update['PTM_sites'] = site_list
-        
+
     return df_update
         
 
