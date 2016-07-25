@@ -64,3 +64,34 @@ def score_(peptide_seq):
         length_crit = True
         score -= 1
     return edq, kr, ked, length_crit, score
+
+
+def check_ptm_redundancy(df, filename):
+    df_ptm = pd.read_table(filename, index_col=False)
+    df_ptm['query_sequence'] = [seq.upper()
+                                for seq in df_ptm.Sequence.tolist()]
+    site_list = []
+    redundancy_list = []
+
+    for seq in df.sequence.tolist():
+        red = df_ptm.Protein[df_ptm.query_sequence == seq].tolist()
+        redundancy_list.append([pr for pr in red if type(pr) == str])
+        sites = df_ptm.Site[df_ptm.query_sequence == seq].tolist()
+        site_list.append([s for s in sites if type(s) == str])
+
+    for i, l in enumerate(redundancy_list):
+        if not l:
+            redundancy_list[i] = 'unknown'
+            site_list[i] = 'unknown'
+
+    for i, ptm in enumerate(site_list):
+        if not ptm:
+            site_list[i] = 'no PTM reported'
+
+    df_update = df.dopy()
+    df_update['redundancy'] = redundancy_list
+    df_update['PTM_sites'] = site_list
+        
+    return df_update
+        
+
