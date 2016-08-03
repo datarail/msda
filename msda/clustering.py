@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder
 from sklearn.lda import LDA
 import numpy as np
+from itertools import combinations
 
 
 def normalize_min_max(df):
@@ -32,23 +33,37 @@ def hierarchical_clustering(df, samples, plot_name='hc_plot.png'):
     plt.clf()
 
 
-def pca(df, samples, plot_name='pca_plot.png'):
+def pca(df, samples, num_components=2, plot_prefix='pca_plot_'):
     df = df.copy()
     df = df.transpose()
     df = df.ix[samples]
     df_nrm = normalize_min_max(df)
     X = df_nrm.values
-    pca = PCA(n_components=2)
+    pca = PCA(n_components=num_components)
     X_pca = pca.fit_transform(X)
-    var1, var2 = pca.explained_variance_ratio_
-    plt.scatter(X_pca[:, 0], X_pca[:, 1], alpha=0.5)
-    for sample, pc1, pc2 in zip(samples, X_pca[:, 0], X_pca[:, 1]):
+    explained_variance = pca.explained_variance_ratio_
+    for pcs in list(combinations(range(num_components), r=2)):
+        plot_name = '%s%d%d.png' % (plot_prefix, pcs[0], pcs[1])
+        plot_pca(X_pca, explained_variance, samples, pcs, plot_name)
+
+
+def plot_pca(X_pca, explained_variance, samples,
+             pcs=[0, 1], plot_name='pca_plot_12.png'):
+    Xs_pca = np.zeros([X_pca.shape[0], 2])
+    Xs_pca[:, 0] = X_pca[:, pcs[0]]
+    Xs_pca[:, 1] = X_pca[:, pcs[1]]
+    plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5)
+    for sample, pc1, pc2 in zip(samples, Xs_pca[:, 0], Xs_pca[:, 1]):
         plt.annotate(sample, xy=(pc1, pc2), textcoords='offset points')
-    plt.xlabel('PCA1 (explained_variance = %.2f%%)' % (100*var1))
-    plt.ylabel('PCA2 (explained_variance = %.2f%%)' % (100*var2))
+    plt.xlabel('PC_%d (explained_variance = %.2f%%)' %
+               (pcs[0], 100 * explained_variance[pcs[0]]))
+    plt.ylabel('PC_%d (explained_variance = %.2f%%)' %
+               (pcs[1], 100 * explained_variance[pcs[1]]))
     plt.savefig(plot_name)
     plt.clf()
 
+    
+   
 
 def lda(df, samples, sample_labels, plot_name='lda_plot.png'):
     df = df.copy()
