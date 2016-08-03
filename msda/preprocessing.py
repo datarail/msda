@@ -5,6 +5,21 @@ import requests
 import StringIO
 
 
+def get_samples(key_file):
+    lines = open(key_file, 'rt').readlines()
+    for i, l in enumerate(lines):
+        if l.startswith('TMT-126'):
+            entry_lines = lines[i:]
+    sample_id = {}
+    for l in entry_lines:
+        id, sample = l.split()
+        sample_id[id] = sample
+    df = pd.DataFrame(sample_id.items(),
+                      columns=['mass_spec_label', 'samples'])
+    sample_list = df['samples'].tolist()
+    return sample_list
+
+
 mapping_url = 'http://www.uniprot.org/mapping/'
 
 df_map = pd.read_csv('resources/Uniprot_sec_to_prim.csv', sep='\t')
@@ -44,6 +59,10 @@ def pd_import(excel_file, sample_list=[]):
         if isinstance(gs, pd.datetime):
             df.Gene_Symbol.ix[i] = get_gene_names(df.Protein_Id.ix[i])
 
+    for i, gs in enumerate(df.Gene_Symbol):
+        if type(gs) == float:
+            df.Gene_Symbol.ix[i] = get_gene_names(df.Protein_Id.ix[i])
+
     # Remove deleted uniprot ids
     df = df[~df.Protein_Id.isin(delac_tr)]
 
@@ -62,13 +81,19 @@ def get_gene_names(uid):
         }
 
     r = requests.get(mapping_url, params)
-    r.raise_for_status()
-    mp = r.text
+    # r.raise_for_status()
+    if r.status_code == 200:
+        mp = r.text
+    else:
+        mp = 'unknown'
 
     cmp = StringIO.StringIO(mp)
 
     df = pd.read_csv(cmp, sep='\t')
-    name = re.split('\_', df.To[0])[0]
+    try:
+        name = re.split('\_', df.To[0])[0]
+    except IndexError:
+        name = 'unknown'
     return name
 
 
