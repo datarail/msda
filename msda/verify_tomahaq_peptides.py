@@ -2,6 +2,16 @@ import re
 import pandas as pd
 import phosphosite_client as pc
 
+
+def make_report(file):
+    f = open(file).readlines()
+    peptide_list = [s.strip().split('\n')[0] for s in f]
+    df = prune_list(peptide_list)
+    df_ptm = check_ptm_redundancy(df)
+    uid = file.strip().split('_')[0]
+    df_ptm.to_csv('%s_report.csv' % uid, index=False)
+
+
 def prune_list(peptide_list):
     tryptic_petides = [p for p in peptide_list if _is_tryptic(p)]
     l1, l2, l3, l4, l5 = [], [], [], [], []
