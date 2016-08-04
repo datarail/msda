@@ -74,7 +74,7 @@ def get_apoptotic_subset(df):
     uids.remove('Q96PG8, Q9BXH1')
     uids.append('Q96PG8')
     uids.append('Q9BHX1')
-    df_subset = df.loc[df.Protein_Id.isin(uids)]
+    df_subset = df.loc[df.Protein_Id_tr.isin(uids)]
     return df_subset
 
 

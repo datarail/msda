@@ -66,6 +66,9 @@ def pd_import(excel_file, sample_list=[]):
     # Remove deleted uniprot ids
     df = df[~df.Protein_Id.isin(delac_tr)]
 
+    df['Protein_Id_tr'] = [pr.strip().split('-')[0]
+                           for pr in df.Protein_Id.tolist()]
+
     return df
 
 
