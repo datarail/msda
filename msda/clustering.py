@@ -43,7 +43,7 @@ def pca(df, samples, num_components=2, plot_prefix='pca_plot_'):
     X_pca = pca.fit_transform(X)
     explained_variance = pca.explained_variance_ratio_
     for pcs in list(combinations(range(num_components), r=2)):
-        plot_name = '%s%d%d.png' % (plot_prefix, pcs[0], pcs[1])
+        plot_name = '%s%d_%d.png' % (plot_prefix, pcs[0]+1, pcs[1]+1)
         plot_pca(X_pca, explained_variance, samples, pcs, plot_name)
 
 
@@ -56,9 +56,9 @@ def plot_pca(X_pca, explained_variance, samples,
     for sample, pc1, pc2 in zip(samples, Xs_pca[:, 0], Xs_pca[:, 1]):
         plt.annotate(sample, xy=(pc1, pc2), textcoords='offset points')
     plt.xlabel('PC_%d (explained_variance = %.2f%%)' %
-               (pcs[0], 100 * explained_variance[pcs[0]]))
+               (pcs[0]+1, 100 * explained_variance[pcs[0]]))
     plt.ylabel('PC_%d (explained_variance = %.2f%%)' %
-               (pcs[1], 100 * explained_variance[pcs[1]]))
+               (pcs[1]+1, 100 * explained_variance[pcs[1]]))
     plt.savefig(plot_name)
     plt.clf()
 
