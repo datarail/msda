@@ -13,10 +13,12 @@ def get_ptms(query_string):
 
     sequences = [line.strip().split('\t')[1] for line in r_list]
     proteins = [line.strip().split('\t')[2] for line in r_list]
+    uids = [line.strip().split('\t')[3] for line in r_list]
     sites = [line.strip().split('\t')[5] for line in r_list]
     sites = [x if x != '' else None for x in sites]
 
-    df_ptm = pd.DataFrame(zip(sequences, proteins, sites),
-                          columns=[sequences[0], proteins[0], sites[0]])
+    df_ptm = pd.DataFrame(zip(sequences, proteins, sites, uids),
+                          columns=[sequences[0], proteins[0],
+                                   sites[0], uids[0]])
 
     return df_ptm
