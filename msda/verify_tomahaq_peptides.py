@@ -96,7 +96,6 @@ def verify_subsequent(peptide_seq, uid):
     return sa
 
 
-
 def verify_cterminal(peptide_seq, uid):
     url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
     r = requests.get(url)
@@ -111,32 +110,22 @@ def verify_cterminal(peptide_seq, uid):
     return c_terminal
 
 
-def score_(peptide_seq):
-    edq, kr, kre, ked, length_crit, score = False, False, False, False, False, 0
+def score_(peptide_seq, uid):
+    edq, kr, ed, length_crit, score = False, False, False, False, 0
     if bool(re.search("^[E,D,Q]", peptide_seq)):
         edq = True
         score -= 1
-    if bool(re.search("^KK", peptide_seq)) or bool(
-            re.search("^RR", peptide_seq)) or bool(
-                re.search("^RK", peptide_seq)):
+    s = verify_subsequent(peptide_seq, uid)
+    if (s == 'K') or (s == 'R'):
         kr = True
         score -= 1
-    if bool(re.search("KK$", peptide_seq)) or bool(
-            re.search("RR$", peptide_seq)) or bool(
-                re.search("RK$", peptide_seq)):
-        kre = True
-        score -= 1
-    
-    if bool(re.search("KE$", peptide_seq)) or bool(
-            re.search("KD$", peptide_seq)) or bool(
-                re.search("RD$", peptide_seq)) or bool(
-                    re.search("RE$", peptide_seq)):
-        ked = True
+    if (s == 'E') or (s == 'D'):
+        ed = True
         score -= 1
     if not 5 <= len(peptide_seq) < 35:
         length_crit = True
         score -= 1
-    return edq, kr, kre, ked, length_crit, score
+    return edq, kr, ed, length_crit, score
 
 
 def check_ptm_redundancy(df):
