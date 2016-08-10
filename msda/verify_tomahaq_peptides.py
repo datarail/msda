@@ -83,6 +83,20 @@ def verify_preceeding(peptide_seq, uid):
     return tryptic
 
 
+def verify_subsequent(peptide_seq, uid):
+    url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
+    r = requests.get(url)
+    fasta_output = str(r.text)
+    fasta_lines = fasta_output.strip().split('\n')
+    protein_sequence = ''.join(fasta_lines[1:])
+    start_ind = protein_sequence.find(peptide_seq)
+    # index of subsequent amino acid
+    next_ind = start_ind + len(peptide_seq)
+    sa = protein_sequence[next_ind]
+    return sa
+
+
+
 def verify_cterminal(peptide_seq, uid):
     url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
     r = requests.get(url)
@@ -95,10 +109,10 @@ def verify_cterminal(peptide_seq, uid):
     else:
         c_terminal = False
     return c_terminal
-        
+
 
 def score_(peptide_seq):
-    edq, kr, kre, ked, length_crit, score = False, False, False, False, False,  0
+    edq, kr, kre, ked, length_crit, score = False, False, False, False, False, 0
     if bool(re.search("^[E,D,Q]", peptide_seq)):
         edq = True
         score -= 1
