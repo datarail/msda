@@ -15,21 +15,19 @@ def make_report(file):
 
 def prune_list(peptide_list, uid):
     tryptic_petides = [p for p in peptide_list if _is_tryptic(p, uid)]
-    l1, l2, l3, l4, l5, l6 = [], [], [], [], [], []
+    l1, l2, l3, l4, l5 = [], [], [], [], []
     for pep in tryptic_petides:
-        score = score_(pep)
+        score = score_(pep, uid)
         l1.append(score[0])
         l2.append(score[1])
         l3.append(score[2])
         l4.append(score[3])
         l5.append(score[4])
-        l6.append(score[5])
 
-    df = pd.DataFrame(zip(tryptic_petides, l1, l2, l3, l4, l5, l6),
-                      columns=['sequence', 'starts_with_EorDorQ',
-                               'starts_with_KKorRRorRK',
-                               'ends_with_KKorRRorRK',
-                               'ends_with_KEorKDorRDorRE',
+    df = pd.DataFrame(zip(tryptic_petides, l1, l2, l3, l4, l5),
+                      columns=['sequence', 'starts_with_.Eor.Dor.Q',
+                               'ends_with_K.KorR.RorR.KorK.R',
+                               'ends_with_K.EorK.DorR.DorR.E',
                                'length_crit', 'score'])
     return df
 
@@ -92,7 +90,10 @@ def verify_subsequent(peptide_seq, uid):
     start_ind = protein_sequence.find(peptide_seq)
     # index of subsequent amino acid
     next_ind = start_ind + len(peptide_seq)
-    sa = protein_sequence[next_ind]
+    try:
+        sa = protein_sequence[next_ind]
+    except IndexError:
+        print peptide_seq, uid
     return sa
 
 
@@ -115,13 +116,14 @@ def score_(peptide_seq, uid):
     if bool(re.search("^[E,D,Q]", peptide_seq)):
         edq = True
         score -= 1
-    s = verify_subsequent(peptide_seq, uid)
-    if (s == 'K') or (s == 'R'):
-        kr = True
-        score -= 1
-    if (s == 'E') or (s == 'D'):
-        ed = True
-        score -= 1
+    if not verify_cterminal(peptide_seq, uid):
+        s = verify_subsequent(peptide_seq, uid)
+        if (s == 'K') or (s == 'R'):
+            kr = True
+            score -= 1
+        if (s == 'E') or (s == 'D'):
+            ed = True
+            score -= 1
     if not 5 <= len(peptide_seq) < 35:
         length_crit = True
         score -= 1
