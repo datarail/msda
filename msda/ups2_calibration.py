@@ -17,7 +17,11 @@ df_mw_chart = pd.read_csv('../data/amino_acid_mw_chart.csv')
 
 
 def get_id(md_string):
-    id = md_string.strip().split('|')[1]
+    try:
+        id = md_string.strip().split('|')[1]
+    except IndexError:
+        id = md_string
+        print id
     return id
 
 
