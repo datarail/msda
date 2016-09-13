@@ -1,6 +1,11 @@
 import pandas as pd
 import collections
 import re
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+from sklearn.cross_validation import Bootstrap
+import numpy as np
+
 
 # http://pir.georgetown.edu/cgi-bin/comp_mw.pl?ids=P53039&seq=&submit=Submit
 # http://web.expasy.org/peptide_mass/
@@ -87,3 +92,76 @@ def generate_report(file):
                                'Molecular_Weight (kDa)',
                                'num_theoretical_peptides', 'num_unique'])
     return df
+
+
+def compute_ibaq(df, organism='human'):
+    ref_file = '../data/proteomes/%s_proteome_report.csv' % organism
+    df_ref = pd.read_csv(ref_file)
+    num_theor_peptides, ibaq_list, log10_ibaq = [], [], []
+    for protein in df['Protein Id'].tolist():
+        uid = protein.strip().split('|')[1]
+        num_theor_peptides.append(df_ref[
+            df_ref.UniprotID == uid].num_theoretical_peptides.values[0])
+    df['num_theoretical_peptides'] = num_theor_peptides
+    for id in range(len(df)):
+        ibaq = df['default~cq_max_sum'].iloc[id] /\
+               df['num_theoretical_peptides'].iloc[id]
+        ibaq_list.append(ibaq)
+        log10_ibaq.append(np.log10(ibaq))
+    df['IBAQ'] = ibaq_list
+    df['log10_IBAQ'] = log10_ibaq
+    return df
+
+
+def ups2_regression(ups2_ibaq, ups2_conc):
+
+    regr = LinearRegression()
+    regr.fit(ups2_ibaq, ups2_conc)
+    # plt.scatter(ups2_ibaq, ups2_conc)
+    # m = regr.coef_[0][0]
+    # c = regr.intercept_[0]
+    # reg_line = [m * x + c for x in ups2_ibaq]
+    # plt.plot(ups2_ibaq, reg_line)
+    # plt.show()
+    return regr
+
+
+def bootstrap_regression(ups2_ibaq, ups2_conc):
+    n_samples = len(ups2_conc)
+    N = 10000
+    n_dups = N / n_samples
+    ups2_conc_sets = []
+    ups2_ibaq_sets = []
+    for n in range(n_dups):
+        ups2_conc_sets += list(ups2_conc)
+        ups2_ibaq_sets += list(ups2_ibaq)
+    N_set = len(ups2_ibaq_sets)
+    bs = Bootstrap(N_set, n_iter=N,
+                   train_size=n_samples, random_state=0)
+    regr_list = []
+    for train_index, _ in bs:
+        ibaq = np.array(ups2_ibaq_sets)[train_index]
+        conc = np.array(ups2_conc_sets)[train_index]
+        regr_list.append(ups2_regression(ibaq, conc))
+    return regr_list
+
+
+def get_mean_sd(regr_list):
+    slope = [reg.coef_[0][0] for reg in regr_list]
+    slope_mean = np.mean(slope)
+    slope_SD = np.std(slope)
+    intercept = [reg.intercept_[0] for reg in regr_list]
+    intercept_mean = np.mean(intercept)
+    intercept_SD = np.std(intercept)
+    return slope_mean, slope_SD, intercept_mean, intercept_SD
+
+
+def calibrate(df, slope, intercept):
+    log10_conc = []
+    for id in range(len(df)):
+        ibaq = df.log10_IBAQ.iloc[id]
+        conc = (slope * ibaq) + intercept
+        log10_conc.append(conc)
+    df['log10_conc'] = log10_conc
+    return df
+
