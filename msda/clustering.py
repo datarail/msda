@@ -25,45 +25,62 @@ def hierarchical_clustering(df, samples, plot_name='hc_plot.png'):
     cell_line_clusters = linkage(
         pdist(df_nrm, metric='correlation'),
         method='complete')
-    dendrogram(cell_line_clusters, labels=df_nrm.index)
+    dendrogram(cell_line_clusters, labels=df_nrm.index,
+               color_threshold=0)
     plt.ylabel('Pearson correlation distance')
     plt.xticks(rotation=90)
     plt.tight_layout()
-    plt.savefig(plot_name)
+    plt.savefig(plot_name, dpi=600)
     plt.clf()
 
 
-def pca(df, samples, num_components=2, plot_prefix='pca_plot_'):
+def pca(df, samples, num_components=2, plot_prefix='pca_plot_',
+        sample_map=None, color_map=None):
     df = df.copy()
     df = df.transpose()
     df = df.ix[samples]
-    df_nrm = normalize_min_max(df)
-    X = df_nrm.values
+    # df_nrm = normalize_min_max(df)
+    X = df.values
+    if sample_map:
+        y = np.array([sample_map[sample] for sample in df.index.tolist()])
+    else:
+        y = None
     pca = PCA(n_components=num_components)
     X_pca = pca.fit_transform(X)
     explained_variance = pca.explained_variance_ratio_
     for pcs in list(combinations(range(num_components), r=2)):
         plot_name = '%s%d_%d.png' % (plot_prefix, pcs[0]+1, pcs[1]+1)
-        plot_pca(X_pca, explained_variance, samples, pcs, plot_name)
+        plot_pca(X_pca, explained_variance, samples, pcs, plot_name,
+                 y, color_map)
+    return X_pca, explained_variance
 
 
 def plot_pca(X_pca, explained_variance, samples,
-             pcs=[0, 1], plot_name='pca_plot_12.png'):
+             pcs=[0, 1], plot_name='pca_plot_12.png', y=None, labels=None):
     Xs_pca = np.zeros([X_pca.shape[0], 2])
     Xs_pca[:, 0] = X_pca[:, pcs[0]]
     Xs_pca[:, 1] = X_pca[:, pcs[1]]
-    plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5)
+    if not labels:
+        plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5)
+    elif labels:
+        for lab, col in labels.iteritems():
+            plt.scatter(Xs_pca[y == lab, 0], Xs_pca[y == lab, 1],
+                        label=lab, color=col)
     for sample, pc1, pc2 in zip(samples, Xs_pca[:, 0], Xs_pca[:, 1]):
-        plt.annotate(sample, xy=(pc1, pc2), textcoords='offset points')
-    plt.xlabel('PC_%d (explained_variance = %.2f%%)' %
+        plt.annotate(sample,
+                     xy=(pc1, pc2), xytext=(-3, 3), size=5,
+                     textcoords='offset points', ha='right', va='bottom')
+    plt.xlabel('PC %d (explained variance = %.2f%%)' %
                (pcs[0]+1, 100 * explained_variance[pcs[0]]))
-    plt.ylabel('PC_%d (explained_variance = %.2f%%)' %
+    plt.ylabel('PC %d (explained variance = %.2f%%)' %
                (pcs[1]+1, 100 * explained_variance[pcs[1]]))
-    plt.savefig(plot_name)
+    plt.xticks([])
+    plt.yticks([])
+    plt.legend(fontsize=10, loc='lower left')
+    # plt.tight_layout()
+    plt.savefig(plot_name, dpi=600)
     plt.clf()
 
-    
-   
 
 def lda(df, samples, sample_labels, plot_name='lda_plot.png'):
     df = df.copy()
@@ -140,6 +157,7 @@ def diff_exp(df, samples, figname, top=25):
     plt.yticks([i+0.5 for i in range(top)], df_nrm.index.values[:top])
     plt.xticks([i+0.5 for i in range(len(samples))], samples, rotation=90)
     plt.colorbar()
+    plt.tight_layout()
     plt.savefig(figname)
     plt.clf()
 
