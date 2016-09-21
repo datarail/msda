@@ -47,7 +47,10 @@ def get_mw(seq):
 def get_peptides(seq, amino_acid):
     r_indeces = [m.end()-1 for m in re.finditer(amino_acid, seq)]
     if amino_acid == 'R':
-        r_indeces = [r for r in r_indeces if seq[r+1] != 'P']
+        if r_indeces[-1] < (len(seq)-1):
+            r_indeces = [r for r in r_indeces if seq[r+1] != 'P']
+        else:
+            r_indeces[:-1] = [r for r in r_indeces[:-1] if seq[r+1] != 'P']
     r_indeces.append(len(seq))
     start = 0
     r_peptides = []
@@ -70,7 +73,7 @@ def observable_peptides(seq):
             else:
                 rp_peptides.append(pep)
     except IndexError:
-        rp_peptides = get_peptides(seq, 'P')
+        rp_peptides = get_peptides(seq, 'K')
     return rp_peptides
 
 
@@ -95,7 +98,7 @@ def generate_report(file):
 
 
 def compute_ibaq(df, organism='human'):
-    ref_file = '../data/proteomes/%s_proteome_report.csv' % organism
+    ref_file = '../data/%s_proteome_report.csv' % organism
     df_ref = pd.read_csv(ref_file)
     num_theor_peptides, ibaq_list, log10_ibaq = [], [], []
     for protein in df['Protein Id'].tolist():
@@ -164,4 +167,3 @@ def calibrate(df, slope, intercept):
         log10_conc.append(conc)
     df['log10_conc'] = log10_conc
     return df
-
