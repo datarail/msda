@@ -32,13 +32,18 @@ delac_tr = ['C9JYP6']
 #         delac_ids = [id.splitlines()[0] for id in delac_tr[i+2:]]
 
 
-def pd_import(excel_file, sample_list=[]):
-    df = pd.read_excel(excel_file)
+def pd_import(file, sample_list=[]):
+    if '.xlsx' in file:
+        df = pd.read_excel(file)
+    elif '.csv' in file:
+        df = pd.read_csv(file)
+    else:
+        print file, "is not a supported filetype"
     columns = [re.sub(" ", "_", str(i)) for i in df.columns]
 
     if sample_list:
         sample_index = [columns.index(s) for s in columns
-                    if "_sn_scaled" in s]
+                    if "_sn_" in s]
         columns[sample_index[0]: sample_index[-1]+1] = sample_list
     df.columns = columns
 
@@ -52,7 +57,7 @@ def pd_import(excel_file, sample_list=[]):
     # Replace secondary accesion numbers with primary ID's
     for i, pid in enumerate(df.Protein_Id):
         if pid in sec_ids:
-            df.Protein_Id[i] = get_primary_ids(pid)
+            df.Protein_Id.iloc[i] = get_primary_ids(pid)
 
     # Fix datetime entries in Gene names
     for i, gs in enumerate(df.Gene_Symbol):
@@ -66,7 +71,7 @@ def pd_import(excel_file, sample_list=[]):
     # Remove deleted uniprot ids
     df = df[~df.Protein_Id.isin(delac_tr)]
 
-    df['Protein_Id_tr'] = [pr.strip().split('-')[0]
+    df['Protein_Id_prefix'] = [pr.strip().split('-')[0]
                            for pr in df.Protein_Id.tolist()]
 
     return df
