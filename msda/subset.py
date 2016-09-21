@@ -23,7 +23,7 @@ def get_kinase_set(df):
     # uid_list = [i for i in uid_list if i not in ['not found']]
     # joint_list = list(set(kinase_list) | set(uid_list))
 
-    df_ks = pd.read_excel('resources/kinome_tree.xls')
+    df_ks = pd.read_excel('resources/kinome_render.xls')
     kinase_list = list(set(df_ks.UniprotID.tolist()))
     df_subset = df.loc[df.Protein_Id.isin(kinase_list)]
     return df_subset
@@ -36,6 +36,13 @@ def get_tf_set(df):
     return df_subset
 
 
+def get_tf_rat_set(df):
+    tr_file = open('resources/transcription_factors_rat_uniprot.txt').readlines()
+    tr_list = [i.split('\n')[0] for i in tr_file]
+    df_subset = df.loc[df.Protein_Id.isin(tr_list)]
+    return df_subset
+
+
 def get_pfam_domain_acc(uniprot_id):
     url = 'http://pfam.xfam.org/protein/%s?output=xml' % uniprot_id
     r = requests.get(url)
@@ -43,15 +50,78 @@ def get_pfam_domain_acc(uniprot_id):
     xml = r.text
     root = ET.fromstring(xml)
 
-    for child in root[0]:
-        if 'matches' in child.tag:
-            pfam_matches = child
+    domain_acc, domain_id, start, end = [], [], [], []
 
-    if pfam_matches:
-        domain_acc = []
-        for match in pfam_matches:
-            domain_acc.append(match.attrib['accession'])
-    return domain_acc
+    try:        
+        for child in root[0]:
+            if 'matches' in child.tag:
+                pfam_matches = child
+            else:
+                pfam_matches = None
+        if pfam_matches:
+            for match in pfam_matches:
+                domain_acc.append(match.attrib['accession'])
+                domain_id.append(match.attrib['id'])
+                for location in match:
+                    start.append(int(location.attrib['start']))
+                    end.append(int(location.attrib['end']))
+        else:
+            domain_acc.append('NA')
+            domain_id.append('NA')
+            start.append('NA')
+            end.append('NA')        
+    except IndexError:
+        domain_acc.append('NA')
+        domain_id.append('NA')
+        start.append('NA')
+        end.append('NA')         
+    
+    # if pfam_matches:
+    #     for match in pfam_matches:
+    #         domain_acc.append(match.attrib['accession'])
+    #         domain_id.append(match.attrib['id'])
+    #         for location in match:
+    #             start.append(int(location.attrib['start']))
+    #             end.append(int(location.attrib['end']))
+    # else:
+    #     domain_acc.append('NA')
+    #     domain_id.append('NA')
+    #     start.append('NA')
+    #     end.append('NA')
+    df = pd.DataFrame(zip(domain_acc, domain_id, start, end),
+                      columns=['Accession', 'ID', 'start_pos', 'end_pos'])
+    return df
+
+
+def get_pfam_domain(uniprot_id, site):
+    df = get_pfam_domain_acc(uniprot_id)
+    domain = df[(df.start_pos < site) & (df.end_pos > site)].values.tolist()
+    if not domain:
+        domain = ['NA', 'NA', 'NA', 'NA']
+    else:
+        domain = domain[0]
+    return domain
+
+
+def pfam_report(file):
+    df = pd.read_csv(file)
+    uids = df.Uniprot_Id.tolist()
+    sites = df.site.tolist()
+    site_num = [int(s[1:]) for s in sites]
+    acc, id, start, end = [], [], [], []
+    for p, s in zip(uids, site_num):
+        try:
+            domain = get_pfam_domain(p, s)
+        except IndexError:
+            print p, s
+        acc.append(domain[0])
+        id.append(domain[1])
+        start.append(domain[2])
+        end.append(domain[3])
+    df_report = pd.DataFrame(zip(uids, sites, acc, id, start, end),
+                             columns=['Uniprot_Id', 'site', 'PFAM_acc',
+                                      'PFAM_id', 'start', 'end'])
+    return df_report
 
 
 def get_subset(list, domain_list):
@@ -85,14 +155,14 @@ def get_membrane_subset(df):
     return df_subset
 
 
-def get_uniprot_id(id, db):
+def get_id(id, db_from, db_to='ACC'):
     ''' mapping for proteins in kinome.org dataset '''
 
     mapping_url = 'http://www.uniprot.org/mapping/'
 
     params = {
-        'from': db,
-        'to': 'ACC',
+        'from': db_from,
+        'to': db_to,
         'format': 'tab',
         'query': id
         }
@@ -109,3 +179,12 @@ def get_uniprot_id(id, db):
         # print refseq
         name = 'not found'
     return name
+
+
+def get_kinase_rat(df):
+
+    df_ks = pd.read_csv('resources/Kinase_Substrate_Dataset.csv',
+                        sep='\t', header=2)
+    kinase_list = list(set(df_ks.KIN_ACC_ID.tolist()))
+    df_subset = df.loc[df.Protein_Id.isin(kinase_list)]
+    return df_subset
