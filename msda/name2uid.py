@@ -8,17 +8,15 @@ def get_uid(name):
     symbol = []
     uid = []
     for hit in res['hits']:
-        uid.append(hit['uniprot']['Swiss-Prot'])
-        symbol.append(hit['symbol'])
-    dict = {s:i for s,i in zip(symbol, uid)}
+        try:
+            uid.append(hit['uniprot']['Swiss-Prot'])
+            symbol.append(hit['symbol'])
+        except KeyError:
+            uid.append('unable to retrieve')
+    dict = {s: i for s, i in zip(symbol, uid)}
     try:
         uid = dict[name]
         out = uid
     except KeyError:
         out = dict
     return out
-
-    
-
-
-    
