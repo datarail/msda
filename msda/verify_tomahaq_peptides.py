@@ -9,27 +9,34 @@ def make_report(file):
     uid = file.strip().split('_')[0]
     peptide_list = [s.strip().split('\n')[0] for s in f]
     df = prune_list(peptide_list, uid)
-    df_ptm = check_ptm_redundancy(df)
-    df_ptm.to_csv('%s_report.csv' % uid, index=False)
+    if type(df) != str:
+        df_ptm = check_ptm_redundancy(df)
+        df_ptm.to_csv('%s_report.csv' % uid, index=False)
+        return df_ptm
+    else:
+        return df
 
 
 def prune_list(peptide_list, uid):
-    tryptic_petides = [p for p in peptide_list if _is_tryptic(p, uid)]
+    tryptic_peptides = [p for p in peptide_list if _is_tryptic(p, uid)]
     l1, l2, l3, l4, l5 = [], [], [], [], []
-    for pep in tryptic_petides:
-        score = score_(pep, uid)
-        l1.append(score[0])
-        l2.append(score[1])
-        l3.append(score[2])
-        l4.append(score[3])
-        l5.append(score[4])
+    if tryptic_peptides:
+        for pep in tryptic_peptides:
+            score = score_(pep, uid)
+            l1.append(score[0])
+            l2.append(score[1])
+            l3.append(score[2])
+            l4.append(score[3])
+            l5.append(score[4])
 
-    df = pd.DataFrame(zip(tryptic_petides, l1, l2, l3, l4, l5),
-                      columns=['sequence', 'starts_with_.Eor.Dor.Q',
-                               'ends_with_K.KorR.RorR.KorK.R',
-                               'ends_with_K.EorK.DorR.DorR.E',
-                               'length_crit', 'score'])
-    return df
+        df = pd.DataFrame(zip(tryptic_peptides, l1, l2, l3, l4, l5),
+                          columns=['sequence', 'starts_with_.Eor.Dor.Q',
+                                   'ends_with_K.KorR.RorR.KorK.R',
+                                   'ends_with_K.EorK.DorR.DorR.E',
+                                   'length_crit', 'score'])
+        return df
+    else:
+        return 'no tryptic peptides found'
 
 
 def _is_tryptic(peptide_seq, uid):
