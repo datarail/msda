@@ -36,5 +36,9 @@ def get_enrichment_result(data, library='KEGG_2015'):
     response_lines = response.text.split('\n')
     header = response_lines[0].split('\t')
     body = [x.split('\t') for x in response_lines[1:]]
-    df = pd.DataFrame(body, columns=header)
-    return df
+    try:
+        df = pd.DataFrame(body, columns=header)
+        return df
+    except AssertionError:
+        print data['job_name']
+     #return df
