@@ -1,36 +1,61 @@
 import pandas as pd
 import requests
+import numpy as np
 
 df_psite = pd.read_table('resources/phosphosite_dataset_appended.tsv')
 
 df_ptm = pd.read_table('resources/Regulatory_sites_appended.tsv',
                        error_bad_lines=False)
+df_ptm = df_ptm.replace(np.nan, 'nan', regex=True)
+#df_ptm = pd.read_csv('resources/ptm_mapping.csv')
 df_map = pd.read_csv('resources/Uniprot_sec_to_prim.csv', sep='\t')
 df_kinase = pd.read_csv('resources/kinase_substrate_dataset.csv')
 
 
-def get_regulatory_info(uid, site, mod, organism):
+# def get_regulatory_info(uid, msite, mod, organism):
+#     """ retrieval of donwnstream regulation of phosohprylation from 
+#     phosphosite datasets"""
+#     info = {}
+#     # df = pd.read_csv('resources/ptm_mapping.csv')
+#     df = df_ptm[df_ptm.ORGANISM == organism]
+#     site_spec = "%s-%s" % (site, mod)
+#     truth_table = (df.ACC_ID == uid) & (df.Site.isin([site_spec]))
+#     functions = df.Function[truth_table].values[0]
+#     if type(functions) != float:
+#         info['Function'] = functions.strip().split(';')
+#     else:
+#         info['Function'] = 'NA'
+#     processes = str(df.Process[truth_table].values[0])
+#     if type(processes) != float:
+#         info['Process'] = processes.strip().split(';')
+#     else:
+#         info['Process'] = 'NA'
+#     info['PPI'] = df.PPI[truth_table].values[0]
+#     info['other'] = df.Other_interactions[truth_table].values[0]
+#     pmids = df.PMID[truth_table].values[0]
+#     info['evidence'] = pmids.strip().split(';')
+#     return info
+
+
+def get_regulatory_info(motif, organism):
     """ retrieval of donwnstream regulation of phosohprylation from 
     phosphosite datasets"""
     info = {}
     # df = pd.read_csv('resources/ptm_mapping.csv')
     df = df_ptm[df_ptm.ORGANISM == organism]
-    site_spec = "%s-%s" % (site, mod)
-    truth_table = (df.Uniprot_ID == uid) & (df.Site.isin([site_spec]))
-    functions = df.Function[truth_table].values[0]
-    if type(functions) != float:
-        info['Function'] = functions.strip().split(';')
-    else:
-        info['Function'] = 'NA'
-    processes = str(df.Process[truth_table].values[0])
-    if type(processes) != float:
-        info['Process'] = processes.strip().split(';')
-    else:
-        info['Process'] = 'NA'
-    info['PPI'] = df.PPI[truth_table].values[0]
-    info['other'] = df.Other_interactions[truth_table].values[0]
-    pmids = df.PMID[truth_table].values[0]
+    df['MOTIF'] = [mtf[1:-1].upper()
+                   for mtf in df['SITE_+/-7_AA'].tolist()]
+    #id = df.SITE_GRP_ID[df.MOTIF == motif].values[0]
+    # info['id'] = get_identifier_by_seq(motif, organism)
+    functions = df.ON_FUNCTION[df.MOTIF == motif].values[0]
+    info['Function'] = functions.strip().split(';')
+    processes = str(df.ON_PROCESS[df.MOTIF == motif].values[0])
+    info['Process'] = processes.strip().split(';')
+    info['PPI'] = df.ON_PROT_INTERACT[df.MOTIF == motif].values[0]
+    info['other'] = df.ON_OTHER_INTERACT[df.MOTIF == motif].values[0]
+    pmids = df.PMIDs[df.MOTIF == motif].values[0]
     info['evidence'] = pmids.strip().split(';')
+    info['acc_id'] = df.ACC_ID[df.MOTIF == motif].values[0]
     return info
 
 
@@ -43,57 +68,109 @@ def get_identifier(uid, site, mod, organism):
     return id
 
 
-def get_identifier_by_seq(uid, seq, organism):
+def get_identifier_by_seq(seq, organism):
+    info = {}
     df = df_psite[df_psite.ORGANISM == organism]
-    id = df[(df.ACC_ID == uid) &
-            (df['SITE_+/-7_AA'])].SITE_GRP_ID.values[0]
-    return id
-
-
-def get_kinase(uid, seq, organism='human'):
-    df_org = df_kinase[df_kinase.SUB_ORGANISM == organism]
+    df['MOTIF'] = [mtf[1:-1].upper()
+                   for mtf in df['SITE_+/-7_AA'].tolist()]
     try:
-        kinases = df_org.KINASE[(df_org.SUB_ACC_ID == uid) &
-                                (df_org['SITE_+/-7_AA'] == seq) &
-                                (df_org.KIN_ORGANISM == organism)].values[0]
+        info['id'] = df[df.MOTIF == seq].SITE_GRP_ID.values[0]
+        info['uid'] = df[df.MOTIF == seq].ACC_ID.values[0]
     except IndexError:
-        kinases = 'NA'
+        info['id'] = 'nan'
+        info['uid'] = 'nan'
+    return info
+
+
+def get_kinases(motif, organism='human'):
+    df_org = df_kinase[df_kinase.SUB_ORGANISM == organism]
+    df_org['MOTIF'] = [mtf[1:-1].upper()
+                       for mtf in df_org['SITE_+/-7_AA'].tolist()]
+    try:
+        kinases = df_org.KINASE[df_org.MOTIF == motif].values[0]
+    except IndexError:
+        kinases = 'nan'
     return kinases
 
 
-def generate_report(input_df, organism):
-    """ report of downstream affects and upstream kinases returned
-    for phosphosite reported in mass spec datasets"""
-    
-    df_input = input_df
-    df_output = df_input.iloc[:, 0:5].copy()
-    df_output['PSP_idenitifier'] = ['NA']*len(df_output)
-    df_output['Effect_on_function'] = ['NA']*len(df_output)
-    df_output['Effect_on_process'] = ['NA']*len(df_output)
-    df_output['Effect_on_PPI'] = ['NA']*len(df_output)
-    df_output['Evidence'] = ['NA']*len(df_output)
+def get_networkin_kinases(motif):
+    df_networkin = pd.read_table('resources/networkin_human_predictions.tsv')
+    df_motif = df_networkin[df_networkin.sequnce == motif[1:-1]]
+    if not df_motif.empty:
+        highest_score = df_motif.networkin_score.max()
+        highest_scoring_kinase = df_motif.id[
+            df_motif == highest_score].values[0]
+    else:
+        highest_scoring_kinase == 'nan'
+    return highest_scoring_kinase
 
-    for ind in range(len(df_output)):
-        uid = str(df_output.Uniprot_Id.iloc[ind])
-        # aa = str(df_output['amino acid'].iloc[ind])
-        # site_num = df_input['Site Position'].ix[ind]
-        # mod = str(df_input['Mod_Type'].ix[ind])
-        mod = 'p'
-        site = df_output.site.iloc[ind]  # '%s%d' % (aa, site_num)
-        try:
-            id = get_identifier(uid, site, mod, organism)
-            df_output['PSP_idenitifier'].iloc[ind] = id
+
+
+# def generate_report(input_df, organism):
+#     """ report of downstream affects and upstream kinases returned
+#     for phosphosite reported in mass spec datasets"""
+
+#     df_input = input_df
+#     df_output = df_input.copy()
+#     df_output['PSP_idenitifier'] = ['NA']*len(df_output)
+#     df_output['Effect_on_function'] = ['NA']*len(df_output)
+#     df_output['Effect_on_process'] = ['NA']*len(df_output)
+#     df_output['Effect_on_PPI'] = ['NA']*len(df_output)
+#     df_output['Evidence'] = ['NA']*len(df_output)
+
+#     for ind in range(len(df_output)):
+#         uid = str(df_output.Uniprot_Id.iloc[ind])
+#         # aa = str(df_output['amino acid'].iloc[ind])
+#         # site_num = df_input['Site Position'].ix[ind]
+#         # mod = str(df_input['Mod_Type'].ix[ind])
+#         mod = 'p'
+#         site = df_output.site.iloc[ind]  # '%s%d' % (aa, site_num)
+#         try:
+#             id = get_identifier(uid, site, mod, organism)
+#             df_output['PSP_idenitifier'].iloc[ind] = id
+#             try:
+#                 info = get_regulatory_info(uid, site, mod, organism)
+#                 df_output['Effect_on_function'].iloc[ind] = info['Function']
+#                 df_output['Effect_on_process'].iloc[ind] = info['Process']
+#                 df_output['Effect_on_PPI'].iloc[ind] = info['PPI']
+#                 df_output['Evidence'].iloc[ind] = info['evidence']
+#             except IndexError:
+#                 pass
+#         except IndexError:
+#             pass
+#     return df_output
+
+def generate_report(df_input):
+    org, psp, func, process, ppi, evidence = [], [], [], [], [], []
+    uids = []
+    kinases = []
+    uid_org = []
+    sites = []
+    for ind, motif in enumerate(df_input.sequence.tolist()):
+        # ids += [df_input.Uniprot_Id.iloc[ind]]*3
+        for organism in ['human', 'rat', 'mouse']:
+            id_info = get_identifier_by_seq(motif, organism)
+            psp.append(id_info['id'])
+            uid_org.append(id_info['uid'])
+            org.append(organism)
+            kinases.append(get_kinases(motif, organism))
+            uids.append(df_input.Uniprot_Id.iloc[ind])
+            sites.append(df_input.site.iloc[ind])
             try:
-                info = get_regulatory_info(uid, site, mod, organism)
-                df_output['Effect_on_function'].iloc[ind] = info['Function']
-                df_output['Effect_on_process'].iloc[ind] = info['Process']
-                df_output['Effect_on_PPI'].iloc[ind] = info['PPI']
-                df_output['Evidence'].iloc[ind] = info['evidence']
+                info = get_regulatory_info(motif, organism)               
+                func.append(info['Function'])
+                process.append(info['Process'])
+                ppi.append(info['PPI'])
+                evidence.append(info['evidence'])
             except IndexError:
-                pass
-        except IndexError:
-            pass
-    return df_output
+                func.append('nan')
+                process.append('nan')
+                ppi.append('nan')
+                evidence.append('nan')
+                
+    df_out = pd.DataFrame(zip(uids, sites, org, uid_org, psp, func,
+                              process, ppi, evidence, kinases))
+    return df_out
 
 
 def make_input(excel_file):
