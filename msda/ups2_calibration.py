@@ -81,15 +81,17 @@ def generate_report(file):
     lines = open(file).readlines()
     uids, length, mw, obs_pep, obs_pep2 = [], [], [], [], []
     for pr in range(0, len(lines), 2):
-        pr_id = lines[pr]
-        pr_seq = lines[pr+1].strip('\r\n')
-        uids.append(get_id(pr_id))
-        length.append(len(pr_seq))
-        mw.append(get_mw(pr_seq))
-        rp_peptides = observable_peptides(pr_seq)
-        rp_peptides_subset = [pep for pep in rp_peptides if 6 < len(pep) < 31]
-        obs_pep.append(len(rp_peptides_subset))
-        obs_pep2.append(len(list(set(rp_peptides_subset))))
+        if not lines[pr].startswith('>##'):
+            pr_id = lines[pr]
+            pr_seq = lines[pr+1].strip('\r\n')
+            uids.append(get_id(pr_id))
+            length.append(len(pr_seq))
+            mw.append(get_mw(pr_seq))
+            rp_peptides = observable_peptides(pr_seq)
+            rp_peptides_subset = [pep for pep in rp_peptides
+                                  if 6 < len(pep) < 31]
+            obs_pep.append(len(rp_peptides_subset))
+            obs_pep2.append(len(list(set(rp_peptides_subset))))
     df = pd.DataFrame(zip(uids, length, mw, obs_pep, obs_pep2),
                       columns=['UniprotID', 'Length',
                                'Molecular_Weight (kDa)',
