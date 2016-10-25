@@ -100,7 +100,7 @@ def get_peptides(seq, amino_acid):
 
 
 def observable_peptides(seq):
-    """ in silico digest of amino acid sequence by trypin that cuts at K and R
+    """ in silico digest of amino acid sequence by trypsin that cuts at K and R
     Parameters:
     ----------
     seq: string
@@ -164,7 +164,7 @@ def generate_report(file):
     return df
 
 
-def compute_ibaq(df, organism='human'):
+def compute_ibaq_1sample(df, organism='human'):
     """ IBAQ values computed for total intensities of all proteins
 
     Parameters:
@@ -187,7 +187,7 @@ def compute_ibaq(df, organism='human'):
         uid = protein.strip().split('|')[1]
         num_theor_peptides.append(df_ref[
             df_ref.UniprotID == uid].num_theoretical_peptides.values[0])
-    df['num_theoretical_peptides'] = num_theor_peptides
+    df['num_theoretical_peptides'] = num_theor_peptides    
     for id in range(len(df)):
         ibaq = df['default~cq_max_sum'].iloc[id] /\
                df['num_theoretical_peptides'].iloc[id]
@@ -196,6 +196,43 @@ def compute_ibaq(df, organism='human'):
     df['IBAQ'] = ibaq_list
     df['log10_IBAQ'] = log10_ibaq
     return df
+
+
+def compute_ibaq_dataset(df, organism='human'):
+    """ IBAQ values computed for total intensities of all proteins
+
+    Parameters:
+    -----------
+    df: pandas dataframe
+       proteomics dataset with columns as samples and rows as proteins
+    organism: string
+       organism (human, rat, or mouse) to calibrate each protein
+
+    Returns:
+    -------
+    df: pandas dataframe
+       proteomics dataset normalized by IBAQ
+
+    """
+    ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
+    df_ref = pd.read_csv(ref_file)
+    num_theor_peptides = []
+    samples = df.columns.tolist()[2:]
+    for uid in df['PROTEIN_ID'].tolist():
+        try:
+            num_theor_peptides.append(df_ref[
+                df_ref.UniprotID == uid].num_theoretical_peptides.values[0])
+        except IndexError:
+            num_theor_peptides.append('nan')
+    df['num_theoretical_peptides'] = num_theor_peptides
+    df = df[df.num_theoretical_peptides != 'nan']
+    for id in range(len(df)):
+        df2 = df.copy()
+        df2 = df2.fillna(0)
+        df2[samples] = df2[samples].div(df2['num_theoretical_peptides'],
+                                        axis=0)
+        df2[samples] = df2[samples].apply(np.log10)
+    return df2
 
 
 def ups2_regression(ups2_ibaq, ups2_conc):
