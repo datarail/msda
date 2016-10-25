@@ -22,6 +22,17 @@ df_mw_chart = pd.read_csv('../data/amino_acid_mw_chart.csv')
 
 
 def get_id(md_string):
+    """ Uniprot ID extracted from detailed identifiers in fasta file
+    Parameters:
+    ----------
+    md_string: string
+      input string from fasta file with detailed identifier for each protein
+    
+    Return:
+    -------
+    id: string
+      extracted uniprot identifier
+    """
     try:
         id = md_string.strip().split('|')[1]
     except IndexError:
@@ -31,6 +42,19 @@ def get_id(md_string):
 
 
 def get_mw(seq):
+    """ Calculate molecular weight of input amino acid sequence
+
+    Parameters:
+    ----------
+    seq: string
+       sequence of amino acids
+
+    Returns:
+    --------
+    mw_seq: int
+      moecular weight of sequence
+    """
+
     counter = collections.Counter(seq)
     mw_seq = 0
     for aa in counter.keys():
@@ -41,10 +65,25 @@ def get_mw(seq):
         except IndexError:
             print aa
     mw_seq -= 18.015 * (len(seq) - 1)
-    return mw_seq * 0.001
+    mw_seq = mw_seq * 0.001
+    return mw_seq
 
 
 def get_peptides(seq, amino_acid):
+    """ in silico digest of sequence given the site at which the enzyme cuts
+
+    Parameters:
+    -----------
+    seq: string
+      sequence of amino acids
+    amino_acid: string
+      one-letter code for site at which enzyme cleaves
+
+    Returns:
+    --------
+    r_peptides: list of strings
+       list of petides resulting from in-silico digest
+    """
     r_indeces = [m.end()-1 for m in re.finditer(amino_acid, seq)]
     if amino_acid == 'R':
         if r_indeces[-1] < (len(seq)-1):
@@ -61,6 +100,17 @@ def get_peptides(seq, amino_acid):
 
 
 def observable_peptides(seq):
+    """ in silico digest of amino acid sequence by trypin that cuts at K and R
+    Parameters:
+    ----------
+    seq: string
+     sequence of amino acids
+    
+    Returns:
+    --------
+    rp_peptides: list of strings
+       list of tryptic peptides
+    """
     try:
         r_peptides = get_peptides(seq, 'R')
         rp_peptides = []
@@ -78,6 +128,21 @@ def observable_peptides(seq):
 
 
 def generate_report(file):
+    """ proteome fasta file is analyzed to calculate length, molecular weight
+    and number of tryptic peptides for all proteins
+
+    Parameters:
+    -----------
+    file: fasta file
+       file containing all protein sequences in the organism
+      (refer to resources/proteomes)
+
+    Returns:
+    --------
+    df: pandas dataframe
+      data table of protein identifier and corresponding mol weight
+      and theoretical peptides
+    """
     lines = open(file).readlines()
     uids, length, mw, obs_pep, obs_pep2 = [], [], [], [], []
     for pr in range(0, len(lines), 2):
@@ -100,6 +165,21 @@ def generate_report(file):
 
 
 def compute_ibaq(df, organism='human'):
+    """ IBAQ values computed for total intensities of all proteins
+
+    Parameters:
+    -----------
+    df: pandas dataframe
+       proteomics dataset with columns as samples and rows as proteins
+    organism: string
+       organism (human, rat, or mouse) to calibrate each protein
+
+    Returns:
+    -------
+    df: pandas dataframe
+       proteomics dataset normalized by IBAQ
+
+    """
     ref_file = '../data/%s_proteome_report.csv' % organism
     df_ref = pd.read_csv(ref_file)
     num_theor_peptides, ibaq_list, log10_ibaq = [], [], []
@@ -119,7 +199,19 @@ def compute_ibaq(df, organism='human'):
 
 
 def ups2_regression(ups2_ibaq, ups2_conc):
+    """ Linear regression based on concentrations of ups2 standards and their ibaq values 
+    Parameters:
+    ----------
+    ups2_ibaq: list of floats
+       list of ibaq values for UPS2 standards
+    ups2_ibaq: list of floats
+       list of known concentrations for UPS2 standards
 
+    Return:
+    regr: tuple
+      tuple of slope and intercept values
+    
+    """
     regr = LinearRegression()
     regr.fit(ups2_ibaq, ups2_conc)
     # plt.scatter(ups2_ibaq, ups2_conc)
@@ -132,6 +224,19 @@ def ups2_regression(ups2_ibaq, ups2_conc):
 
 
 def bootstrap_regression(ups2_ibaq, ups2_conc):
+    """ Boostrap regression to get error values on regression parameters
+    
+    Parameters:
+    -----------
+    ups2_ibaq: list of floats
+       list of ibaq values for UPS2 standards
+    ups2_ibaq: list of floats
+       list of known concentrations for UPS2 standards
+
+    Return:
+    regr_list: list of tuples
+       list of slope and intercept tuples for all run of the boostrap
+     """
     n_samples = len(ups2_conc)
     N = 10000
     n_dups = N / n_samples
@@ -152,6 +257,18 @@ def bootstrap_regression(ups2_ibaq, ups2_conc):
 
 
 def get_mean_sd(regr_list):
+    """ Summary statistics on bootstrap_regression
+
+    Parameters:
+    -----------
+    regr_list: list of tuples
+
+    Returns:
+    --------
+    tuple: 4-tuple of floats
+      mean and SD of slope and intercept
+
+    """
     slope = [reg.coef_[0][0] for reg in regr_list]
     slope_mean = np.mean(slope)
     slope_SD = np.std(slope)
@@ -162,6 +279,22 @@ def get_mean_sd(regr_list):
 
 
 def calibrate(df, slope, intercept):
+    """ Calibrate dataset based on UPS2 standards
+    Parameters:
+    -----------
+    df: pandas dataframe
+      proteomics dataset normalized by IBAQ
+    slope: float
+      mean value of slope
+    intercept: flaot
+      mean value of intercept
+
+    Returns:
+    -------
+    df: Pandas dataframe
+      proteomics data calibrated by ups2 standards to get approximate
+      concentrations for all proteins
+    """
     log10_conc = []
     for id in range(len(df)):
         ibaq = df.log10_IBAQ.iloc[id]
