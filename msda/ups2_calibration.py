@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 from sklearn.cross_validation import Bootstrap
 import numpy as np
+import requests
 
 
 # http://pir.georgetown.edu/cgi-bin/comp_mw.pl?ids=P53039&seq=&submit=Submit
@@ -187,7 +188,7 @@ def compute_ibaq_1sample(df, organism='human'):
         uid = protein.strip().split('|')[1]
         num_theor_peptides.append(df_ref[
             df_ref.UniprotID == uid].num_theoretical_peptides.values[0])
-    df['num_theoretical_peptides'] = num_theor_peptides    
+    df['num_theoretical_peptides'] = num_theor_peptides
     for id in range(len(df)):
         ibaq = df['default~cq_max_sum'].iloc[id] /\
                df['num_theoretical_peptides'].iloc[id]
@@ -223,15 +224,23 @@ def compute_ibaq_dataset(df, organism='human'):
             num_theor_peptides.append(df_ref[
                 df_ref.UniprotID == uid].num_theoretical_peptides.values[0])
         except IndexError:
-            num_theor_peptides.append('nan')
+            r = requests.get('http://www.uniprot.org/uniprot/%s.fasta' % uid)
+            seq = r.text.split('\n')[1:]
+            seq = ''.join(seq)
+            peptides = observable_peptides(seq)
+            rp_peptides_subset = [pep for pep in peptides
+                                  if 6 < len(pep) < 31]
+            num_theor_peptides.append(len(rp_peptides_subset))
     df['num_theoretical_peptides'] = num_theor_peptides
-    df = df[df.num_theoretical_peptides != 'nan']
+    # df = df[df.num_theoretical_peptides != 'nan']
     for id in range(len(df)):
         df2 = df.copy()
         df2 = df2.fillna(0)
         df2[samples] = df2[samples].div(df2['num_theoretical_peptides'],
                                         axis=0)
+        df2.loc[:, samples] = df2.loc[:, samples].div(df2[samples].sum(axis=0))
         df2[samples] = df2[samples].apply(np.log10)
+        df2[samples] = df2[samples].add(10)
     return df2
 
 
