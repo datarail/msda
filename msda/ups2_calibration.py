@@ -180,7 +180,7 @@ def compute_ibaq(df, organism='human'):
        proteomics dataset normalized by IBAQ
 
     """
-    ref_file = '../data/%s_proteome_report.csv' % organism
+    ref_file = '../resouces/%s_proteome_mw_peptides.csv' % organism
     df_ref = pd.read_csv(ref_file)
     num_theor_peptides, ibaq_list, log10_ibaq = [], [], []
     for protein in df['Protein Id'].tolist():
@@ -199,7 +199,8 @@ def compute_ibaq(df, organism='human'):
 
 
 def ups2_regression(ups2_ibaq, ups2_conc):
-    """ Linear regression based on concentrations of ups2 standards and their ibaq values 
+    """ Linear regression based on concentrations of ups2 standards 
+        and their ibaq values 
     Parameters:
     ----------
     ups2_ibaq: list of floats
