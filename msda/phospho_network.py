@@ -2,6 +2,8 @@ import pandas as pd
 from matplotlib_venn import venn2, venn3
 import matplotlib.pyplot as plt
 import networkx as nx
+import requests
+import numpy as np
 
 file = ('/Users/kartik/Dropbox (HMS-LSP)/BrCaLines_profiling/'
         'RAWDATA/massspec/run2015/ReplicateA_pSTY_Summary_031315.xlsx')
@@ -11,10 +13,10 @@ df_ptm = pd.read_table('resources/Regulatory_sites_appended.tsv',
 df_kinase = pd.read_csv('resources/kinase_substrate_dataset.csv')
 df_networkin = pd.read_table('resources/networkin_human_predictions.tsv')
 
-df1 = pd.read_excel(file, sheetname=0, header=1)
-df2 = pd.read_excel(file, sheetname=1, header=1)
-df3 = pd.read_excel(file, sheetname=2, header=1)
-df4 = pd.read_excel(file, sheetname=3, header=1)
+# df1 = pd.read_excel(file, sheetname=0, header=1)
+# df2 = pd.read_excel(file, sheetname=1, header=1)
+# df3 = pd.read_excel(file, sheetname=2, header=1)
+# df4 = pd.read_excel(file, sheetname=3, header=1)
 
 
 def rename_columns(df):
@@ -28,9 +30,9 @@ def rename_columns(df):
     return df
 
 
-def split_sites(df):
+def split_sites(df, diff=None):
     df = rename_columns(df)
-    uids, names, motifs, sites = [], [], [], []
+    uids, names, motifs, sites, fc = [], [], [], [], []
     for index in range(len(df)):
         motif = df.Motif.iloc[index]
         motif_list = motif.split(';')
@@ -40,66 +42,76 @@ def split_sites(df):
         names += [df.Gene_Symbol.iloc[index]] * len(motif_list)
         motifs += motif_list
         sites += site_list
+        mx_score = str(df['Max Score'].iloc[index]).split(';')
+        fc += mx_score
+        if diff is not None:
+            fc += [df[diff].iloc[index]] * len(motif_list)
     uids = [id.split('|')[1] for id in uids]
     sites = ['%s%s' % (m[6], s) for m, s in zip(motifs, sites)]
-    df_clean = pd.DataFrame(zip(uids, names, motifs, sites),
-                            columns=('Protein_ID', 'Gene_Symbol',
-                                     'Motif', 'Site'))
+    if diff is None:
+        df_clean = pd.DataFrame(zip(uids, names, motifs, sites),
+                                columns=('Protein_ID', 'Gene_Symbol',
+                                         'Motif', 'Site'))
+    else:
+        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, fc),
+                                columns=('Protein_ID', 'Gene_Symbol',
+                                         'Motif', 'Site', 'fc'))
+
     return df_clean
 
-df1 = split_sites(df1)
-df2 = split_sites(df2)
-df3 = split_sites(df3)
-df4 = split_sites(df4)
+# df1 = split_sites(df1)
+# df2 = split_sites(df2)
+# df3 = split_sites(df3)
+# df4 = split_sites(df4)
 
-df_input = pd.concat([df1, df2, df3, df4])
+# df_input = pd.concat([df1, df2, df3, df4])
 
-motifs = df_input.Motif.tolist()
-uids = df_input.Protein_ID.tolist()
+# motifs = df_input.Motif.tolist()
+# uids = df_input.Protein_ID.tolist()
 
-ptm_motifs = [m.upper()[1:-1] for m in df_ptm['SITE_+/-7_AA'].tolist()]
-ptm_uids = df_ptm.ACC_ID.tolist()
+# ptm_motifs = [m.upper()[1:-1] for m in df_ptm['SITE_+/-7_AA'].tolist()]
+# ptm_uids = df_ptm.ACC_ID.tolist()
 
-kinase_motifs = [m.upper()[1:-1] for m in df_kinase['SITE_+/-7_AA'].tolist()]
-kinase_uids = df_kinase.SUB_ACC_ID.tolist()
+# kinase_motifs = [m.upper()[1:-1] for m in df_kinase['SITE_+/-7_AA'].tolist()]
+# kinase_uids = df_kinase.SUB_ACC_ID.tolist()
 
-nkin_motifs = [m.upper() for m in df_networkin.sequence.tolist()]
-kinase_motifs11 = [k[1:-1] for k in kinase_motifs]
-pMS_motifs = [k[1:-1] for k in motifs]
-df_input.Motif = pMS_motifs
+# nkin_motifs = [m.upper() for m in df_networkin.sequence.tolist()]
+# kinase_motifs11 = [k[1:-1] for k in kinase_motifs]
+# pMS_motifs = [k[1:-1] for k in motifs]
+# df_input.Motif = pMS_motifs
 
 
-venn2([set(motifs), set(ptm_motifs)],
-      set_labels=('tnbc_phospho', 'downstream_annotations'))
-plt.savefig('phosphoproteomics/dwnstrm_annotations_by_motif2.png')
-plt.clf()
+# venn2([set(motifs), set(ptm_motifs)],
+#       set_labels=('tnbc_phospho', 'downstream_annotations'))
+# plt.savefig('phosphoproteomics/dwnstrm_annotations_by_motif2.png')
+# plt.clf()
 
-venn2([set(uids), set(ptm_uids)],
-      set_labels=('tnbc_phospho', 'downstream_annotations'))
-plt.savefig('phosphoproteomics/dwnstrm_annotaions_by_protein2.png')
-plt.clf()
+# venn2([set(uids), set(ptm_uids)],
+#       set_labels=('tnbc_phospho', 'downstream_annotations'))
+# plt.savefig('phosphoproteomics/dwnstrm_annotaions_by_protein2.png')
+# plt.clf()
 
-venn2([set(motifs), set(kinase_motifs)],
-      set_labels=('tnbc_phospho', 'kinase_annotations'))
-plt.savefig('phosphoproteomics/kinase_annotations_by_motif2.png')
-plt.clf()
+# venn2([set(motifs), set(kinase_motifs)],
+#       set_labels=('tnbc_phospho', 'kinase_annotations'))
+# plt.savefig('phosphoproteomics/kinase_annotations_by_motif2.png')
+# plt.clf()
 
-venn2([set(uids), set(kinase_uids)],
-      set_labels=('tnbc_phospho', 'kinase_annotations'))
-plt.savefig('phosphoproteomics/kinase_annotations_by_protein2.png')
-plt.clf()
+# venn2([set(uids), set(kinase_uids)],
+#       set_labels=('tnbc_phospho', 'kinase_annotations'))
+# plt.savefig('phosphoproteomics/kinase_annotations_by_protein2.png')
+# plt.clf()
 
-venn3([set(uids), set(kinase_uids), set(ptm_uids)],
-      set_labels=('tnbc_phospho', 'kinase_annotations',
-                  'downstream annotations'))
-plt.savefig('phosphoproteomics/annotations_by_protein_venn3.png')
-plt.clf()
+# venn3([set(uids), set(kinase_uids), set(ptm_uids)],
+#       set_labels=('tnbc_phospho', 'kinase_annotations',
+#                   'downstream annotations'))
+# plt.savefig('phosphoproteomics/annotations_by_protein_venn3.png')
+# plt.clf()
 
-venn3([set(motifs), set(kinase_motifs), set(ptm_motifs)],
-      set_labels=('tnbc_phospho', 'kinase_annotations',
-                  'downstream annotations'))
-plt.savefig('phosphoproteomics/annotations_by_motif_venn3.png')
-plt.clf()
+# venn3([set(motifs), set(kinase_motifs), set(ptm_motifs)],
+#       set_labels=('tnbc_phospho', 'kinase_annotations',
+#                   'downstream annotations'))
+# plt.savefig('phosphoproteomics/annotations_by_motif_venn3.png')
+# plt.clf()
 
 
 def get_kinases(motif, organism=None):
@@ -107,7 +119,7 @@ def get_kinases(motif, organism=None):
         df_org = df_kinase[df_kinase.SUB_ORGANISM == organism]
     else:
         df_org = df_kinase
-    df_org['MOTIF'] = [mtf[1:-1].upper()
+    df_org['MOTIF'] = [mtf[2:-2].upper()
                        for mtf in df_org['SITE_+/-7_AA'].tolist()]
     try:
         kinase = df_org.KINASE[df_org.MOTIF == motif].values[0]
@@ -123,8 +135,8 @@ def get_kinases(motif, organism=None):
 
 
 def get_networkin_kinases(motif):
-    motifp = motif[:6] + motif[6].lower() + motif[7:]
-    df_motif = df_networkin[df_networkin.sequence == motifp[1:-1]]
+    motifp = motif[:5] + motif[5].lower() + motif[6:]
+    df_motif = df_networkin[df_networkin.sequence == motifp]
     if not df_motif.empty:
         highest_score = df_motif.networkin_score.max()
         highest_scoring_kinase = df_motif.id[
@@ -135,6 +147,12 @@ def get_networkin_kinases(motif):
 
 
 def generate_kinase_table(df_input):
+    df_input.Motif = [m[1:-1] for m in df_input.Motif.tolist()]
+    psp_motifs = [m.upper()[2:-2] for m  #
+                  in df_kinase['SITE_+/-7_AA'].tolist()]
+    nkin_motifs = [m.upper() for m
+                   in df_networkin.sequence.tolist()]
+    all_motifs = list(set(psp_motifs+nkin_motifs))
     df_input_kinase = df_input[df_input.Motif.isin(all_motifs)]
     df_input_kinase = df_input_kinase.drop_duplicates()
     kinase_names, kinase_ids, orgs = [], [], []
@@ -152,12 +170,12 @@ def generate_kinase_table(df_input):
     df_output['networkin_kinase'] = networkin_kinases
     return df_output
 
-df_out = generate_kinase_table(df_input)
+# df_out = generate_kinase_table(df_input)
 
-subs = list(set(df_out.Gene_Symbol.tolist()))
-kinases = list(set(df_out.KINASE.tolist()))
-venn2([set(kinases), set(subs)], set_labels=('Kinases', 'Substrates'))
-plt.savefig('phosphoproteomics/kinase_substrate.png')
+# subs = list(set(df_out.Gene_Symbol.tolist()))
+# kinases = list(set(df_out.KINASE.tolist()))
+# venn2([set(kinases), set(subs)], set_labels=('Kinases', 'Substrates'))
+# plt.savefig('phosphoproteomics/kinase_substrate.png')
 
 
 def generate_network(df_output):
@@ -174,7 +192,7 @@ def generate_network(df_output):
     return G
 
 
-def generate_ksea_library(kin_sub_table):
+def generate_ksea_library(kin_sub_table, set_size=25):
     df = pd.read_csv(kin_sub_table)
     psp_kinase = [k for k in df.KINASE.tolist() if k != float]
     networkin_kinases = [k for k in df.networkin_kinase.tolist()
@@ -184,18 +202,43 @@ def generate_ksea_library(kin_sub_table):
     gene_sets = []
     for kinase in all_kinases:
         df1 = df[df.KINASE == kinase]
-        subs = df1.Gene_Symbol.tolist()
+        subs = [str(g).upper() for g in df1.Gene_Symbol.tolist()]
         sites = df1.Site.tolist()
         sub_sites = ['%s_%s' % (sub, site) for sub, site
                      in zip(subs, sites)]
         df2 = df[df.networkin_kinase == kinase]
-        subs = df2.Gene_Symbol.tolist()
+        subs = [str(g).upper() for g in df2.Gene_Symbol.tolist()]
         sites = df2.Site.tolist()
         ss = ['%s_%s' % (sub, site) for sub, site in zip(subs, sites)]
         sub_sites = list(set(sub_sites + ss))
-        if len(sub_sites) >= 25:
+        if len(sub_sites) >= set_size:
             gene_set = [kinase, ' '] + sub_sites
             gene_sets.append('\t'.join(gene_set))
     return gene_sets        
-            
-       
+
+
+def generate_substrate_fasta(substrate_list):
+    substrate_fasta = []
+    for substrate in substrate_list:
+        r = requests.get('http://www.uniprot.org/uniprot/%s.fasta' % substrate)
+        substrate_fasta.append(r.text)
+    return substrate_fasta
+
+
+def create_rnk_file(df_input):
+    fc = df_input.fc.tolist()
+    gene = df_input.Gene_Symbol.tolist()
+    site = df_input.Site.tolist()
+
+    id = ["%s_%s" % (g, s) for g, s in zip(gene, site)]
+    df_rnk = pd.DataFrame(zip(id, fc), columns=('ps_id', 'fc'))
+    df_rnk = df_rnk.sort(['fc'], ascending=True)
+    return df_rnk
+
+
+def get_fc(df_input, samples, base_sample):
+    df = df_input[samples].div(df_input[base_sample], axis=0)
+    df = df.apply(np.log2)
+    return df
+#    
+#
