@@ -61,7 +61,7 @@ def plot_pca(X_pca, explained_variance, samples,
     Xs_pca[:, 0] = X_pca[:, pcs[0]]
     Xs_pca[:, 1] = X_pca[:, pcs[1]]
     if not labels:
-        plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5)
+        plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5) #, s=20)
     elif labels:
         for lab, col in labels.iteritems():
             plt.scatter(Xs_pca[y == lab, 0], Xs_pca[y == lab, 1],
