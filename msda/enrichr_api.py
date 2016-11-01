@@ -34,10 +34,10 @@ def get_enrichment(gene_list, library, background=None,
         lib = 'enrichr_libraries/%s.txt' % library
     subprocess.call(['java', '-jar', 'jars/enrichr.jar',
                      gene_list, lib, output_xml])
-    time.sleep(1)
+    time.sleep(10)    
     if os.path.isfile('%s_%s.tsv' % (output_file, library)):
         df = pd.read_table('%s_%s.tsv' % (output_file, library))
-        df = get_adjusted_pvals(df)
+        df = get_adjusted_pvals(df)        
         # os.remove(lib)
     else:
         df = None
