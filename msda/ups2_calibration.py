@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from sklearn.cross_validation import Bootstrap
 import numpy as np
 import requests
+import seaborn as sns
 
 
 # http://pir.georgetown.edu/cgi-bin/comp_mw.pl?ids=P53039&seq=&submit=Submit
@@ -199,7 +200,7 @@ def compute_ibaq_1sample(df, organism='human'):
     return df
 
 
-def compute_ibaq_dataset(df, organism='human'):
+def compute_ibaq_dataset(df, organism='human', samples=None):
     """ IBAQ values computed for total intensities of all proteins
 
     Parameters:
@@ -218,7 +219,8 @@ def compute_ibaq_dataset(df, organism='human'):
     ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
     df_ref = pd.read_csv(ref_file)
     num_theor_peptides = []
-    samples = df.columns.tolist()[2:]
+    if samples is None:
+        samples = df.columns.tolist()[2:]
     for uid in df['PROTEIN_ID'].tolist():
         try:
             num_theor_peptides.append(df_ref[
@@ -349,3 +351,27 @@ def calibrate(df, slope, intercept):
         log10_conc.append(conc)
     df['log10_conc'] = log10_conc
     return df
+
+
+def ibaq_comparision(df_ibaq, samples, biomarkers,
+                     sample_map=None, plot_name='ibaq_com.png'):
+
+    df1 = df_ibaq[df_ibaq.GENE_NAMES.isin(biomarkers)]
+    df2 = df1[['GENE_NAMES'] + samples]
+    df3 = pd.melt(df2, id_vars='GENE_NAMES',
+                  value_vars=df2.columns.tolist()[1:])
+    df3.columns = ['Gene_Symbol', 'variable', 'fmoles']
+    # return df3
+    labels = []
+    if sample_map is not None:
+        for id in range(len(df3)):
+            sample = df3['variable'].iloc[id]
+            labels.append(sample_map[sample])
+        print len(labels)    
+        df3['Label'] = labels        
+    #sns.stripplot(x="Gene_Symbol", y="log10(iBAQ)",
+    #              data=df3, hue="Label")
+    #plt.savefig(plot_name, dpi=600)
+    return df3
+    
+
