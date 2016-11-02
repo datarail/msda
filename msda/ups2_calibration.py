@@ -234,15 +234,15 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
                                   if 6 < len(pep) < 31]
             num_theor_peptides.append(len(rp_peptides_subset))
     df['num_theoretical_peptides'] = num_theor_peptides
-    # df = df[df.num_theoretical_peptides != 'nan']
-    for id in range(len(df)):
-        df2 = df.copy()
-        df2 = df2.fillna(0)
-        df2[samples] = df2[samples].div(df2['num_theoretical_peptides'],
-                                        axis=0)
-        df2.loc[:, samples] = df2.loc[:, samples].div(df2[samples].sum(axis=0))
-        df2[samples] = df2[samples].apply(np.log10)
-        df2[samples] = df2[samples].add(10)
+    df2 = df.copy()
+    df2 = df2.fillna(0)
+    df2[samples] = df2[samples].div(df2['num_theoretical_peptides'],
+                                    axis=0)
+    
+    df2.loc[:, samples] = df2.loc[:, samples].div(df2[samples].sum(axis=0))
+    df2[samples] = df2[samples].apply(np.log10)
+    df2[samples] = df2[samples].add(10)
+    df2 = df2.replace([-np.inf], [np.nan])
     return df2
 
 
@@ -356,11 +356,11 @@ def calibrate(df, slope, intercept):
 def ibaq_comparision(df_ibaq, samples, biomarkers,
                      sample_map=None, plot_name='ibaq_com.png'):
 
-    df1 = df_ibaq[df_ibaq.GENE_NAMES.isin(biomarkers)]
-    df2 = df1[['GENE_NAMES'] + samples]
-    df3 = pd.melt(df2, id_vars='GENE_NAMES',
+    df1 = df_ibaq[df_ibaq.GENE_NAME.isin(biomarkers)]
+    df2 = df1[['GENE_NAME'] + samples]
+    df3 = pd.melt(df2, id_vars='GENE_NAME',
                   value_vars=df2.columns.tolist()[1:])
-    df3.columns = ['Gene_Symbol', 'variable', 'fmoles']
+    df3.columns = ['GENE_NAME', 'variable', 'log10(iBAQ)']
     # return df3
     labels = []
     if sample_map is not None:
