@@ -240,10 +240,11 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
                                     axis=0)
     
     df2.loc[:, samples] = df2.loc[:, samples].div(df2[samples].sum(axis=0))
-    df2[samples] = df2[samples].apply(np.log10)
-    df2[samples] = df2[samples].add(10)
-    df2 = df2.replace([-np.inf], [np.nan])
     return df2
+    # df2[samples] = df2[samples].apply(np.log10)
+    # df2[samples] = df2[samples].add(10)
+    # df2 = df2.replace([-np.inf], [np.nan])
+    # return df2
 
 
 def ups2_regression(ups2_ibaq, ups2_conc):
