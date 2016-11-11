@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import requests
 import numpy as np
+import re
 
 file = ('/Users/kartik/Dropbox (HMS-LSP)/BrCaLines_profiling/'
         'RAWDATA/massspec/run2015/ReplicateA_pSTY_Summary_031315.xlsx')
@@ -18,8 +19,11 @@ df_networkin = pd.read_table('resources/networkin_human_predictions.tsv')
 # df3 = pd.read_excel(file, sheetname=2, header=1)
 # df4 = pd.read_excel(file, sheetname=3, header=1)
 
-
+# this is afunction that renames column headers
 def rename_columns(df):
+    """ renames headers 
+    """
+    
     df = df.rename(columns={'Protein Id': 'Protein_ID',
                             'proteinID': 'Protein_ID',
                             'Site Position': 'Site_Position',
@@ -31,6 +35,7 @@ def rename_columns(df):
 
 
 def split_sites(df, diff=None):
+    # split
     df = rename_columns(df)
     uids, names, motifs, sites, fc = [], [], [], [], []
     for index in range(len(df)):
@@ -217,12 +222,29 @@ def generate_ksea_library(kin_sub_table, set_size=25):
     return gene_sets        
 
 
-def generate_substrate_fasta(substrate_list):
+def generate_substrate_fasta(df):
     substrate_fasta = []
-    for substrate in substrate_list:
-        r = requests.get('http://www.uniprot.org/uniprot/%s.fasta' % substrate)
-        substrate_fasta.append(r.text)
-    return substrate_fasta
+    ids, aa, pos = [], [], []
+    for substrate in df.Protein_ID.tolist():
+        r = requests.get('http://www.uniprot.org/uniprot/%s.fasta' %
+                         substrate)
+        # substrate_fasta.append(r.text)
+        seq_lines = r.text.split('\n')
+        sequence = ''.join(seq_lines[1:])
+        id_line = seq_lines[0]
+        try:
+            # id = re.search('>(.*)HUMAN', id_line).group(1) + 'HUMAN'
+            id = re.search('>sp\|(.*)\|', id_line).group(1)
+            ids.append(id)
+            # seq_lines[0] = id
+            substrate_fasta.append(">%s\n%s\n" % (id, sequence))
+            site = df.Site[df.Protein_ID == substrate].values[0]
+            aa.append(site[0])
+            pos.append(site[1:])
+        except AttributeError:
+            print substrate
+    df2 = pd.DataFrame(zip(ids, pos, aa))
+    return substrate_fasta, df2
 
 
 def create_rnk_file(df_input):
