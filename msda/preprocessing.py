@@ -102,6 +102,8 @@ def get_gene_names(uid):
         name = re.split('\_', df.To[0])[0]
     except IndexError:
         name = 'unknown'
+    except AttributeError:
+        name = 'unknown'
     return name
 
 
