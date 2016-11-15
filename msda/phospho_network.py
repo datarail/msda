@@ -3,6 +3,7 @@ import networkx as nx
 import requests
 import numpy as np
 import re
+import subprocess
 
 file = ('/Users/kartik/Dropbox (HMS-LSP)/BrCaLines_profiling/'
         'RAWDATA/massspec/run2015/ReplicateA_pSTY_Summary_031315.xlsx')
@@ -198,6 +199,15 @@ def create_rnk_file(df_input):
     df_rnk = pd.DataFrame(zip(id, fc), columns=('ps_id', 'fc'))
     df_rnk = df_rnk.sort(['fc'], ascending=True)
     return df_rnk
+
+
+def run_networkin(fasfile, psitefile, outfile):
+    f = open(outfile, 'wb')
+    subprocess.call(['resources/NetworKIN_release3.0/NetworKIN.py',
+                     '-n', 'resources/NetPhorest/netphorest',
+                     '-b', 'resources/blast-2.2.17/bin/blastall', '9606',
+                     fasfile, psitefile], stdout=f)
+    return
 
 
 def get_fc(df_input, samples, base_sample):
