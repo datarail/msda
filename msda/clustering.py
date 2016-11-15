@@ -17,7 +17,8 @@ def normalize_min_max(df):
     return df
 
 
-def hierarchical_clustering(df, samples, plot_name='hc_plot.png'):
+def hierarchical_clustering(df, samples, plot_name='hc_plot.png',
+                            tl=True):
     df = df.copy()
     df = df.transpose()
     df = df.ix[samples]
@@ -29,7 +30,8 @@ def hierarchical_clustering(df, samples, plot_name='hc_plot.png'):
                color_threshold=0)
     plt.ylabel('Pearson correlation distance')
     plt.xticks(rotation=90)
-    plt.tight_layout()
+    if tl:
+        plt.tight_layout()
     plt.savefig(plot_name, dpi=600)
     plt.clf()
 
