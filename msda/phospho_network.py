@@ -30,14 +30,16 @@ def rename_columns(df):
                             # 'siteIDstr': 'Site_Position',
                             'geneSymbol': 'Gene_Symbol',
                             'gene_symbol': 'Gene_Symbol',
-                            'motifPeptideStr': 'Motif'})
+                            'Gene Symbol': 'Gene_Symbol',
+                            'motifPeptideStr': 'Motif',
+                            'Localization score': 'Max Score'})
     return df
 
 
 def split_sites(df, diff=None):
     # split
     df = rename_columns(df)
-    uids, names, motifs, sites, fc = [], [], [], [], []
+    uids, names, motifs, sites, mx, fc = [], [], [], [], [], []
     for index in range(len(df)):
         motif = df.Motif.iloc[index]
         motif_list = motif.split(';')
@@ -48,19 +50,19 @@ def split_sites(df, diff=None):
         motifs += motif_list
         sites += site_list
         mx_score = str(df['Max Score'].iloc[index]).split(';')
-        fc += mx_score
+        mx += mx_score
         if diff is not None:
             fc += [df[diff].iloc[index]] * len(motif_list)
     uids = [id.split('|')[1] for id in uids]
     sites = ['%s%s' % (m[6], s) for m, s in zip(motifs, sites)]
     if diff is None:
-        df_clean = pd.DataFrame(zip(uids, names, motifs, sites),
+        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx),
                                 columns=('Protein_ID', 'Gene_Symbol',
-                                         'Motif', 'Site'))
+                                         'Motif', 'Site', 'score'))
     else:
-        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, fc),
+        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx, fc),
                                 columns=('Protein_ID', 'Gene_Symbol',
-                                         'Motif', 'Site', 'fc'))
+                                         'Motif', 'Site', 'score', 'fc'))
 
     return df_clean
 
