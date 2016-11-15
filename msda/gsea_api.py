@@ -3,6 +3,8 @@ import os
 import matplotlib.pyplot as plt
 from pylab import barh
 import numpy as np
+import pandas as pd
+from pylab import *
 
 
 def get_gsea_enrichment(input_file, library, out_folder=None, out_file=None):
@@ -29,15 +31,17 @@ def plot_nes(path, id):
         df2 = pd.read_table(file2)
     except IOError:
         pass
-    names = df1.NAME.tolist()[:10]
-    nes = df1.NES.tolist()[:10]
-    names += df2.NAME.tolist()[:10]
+    names = df1.NAME.tolist()
+    nes = df1.NES.tolist()
+    names += df2.NAME.tolist()
     # names = '_'.join([n.split('_')[1:] for n in names])
-    nes += df2.NES.tolist()[:10]
-    barh(np.arange(len(nes)), nes)
-    yticks(np.arange(len(nes)), tuple(names))
+    nes += df2.NES.tolist()
+    pos = np.arange(len(nes)) + 0.5
+    barh(pos, nes, align='center')
+    yticks(pos, tuple(names))
     lib = path.split('/')[-2].split('_')[-2]
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.1)
+    xlabel('NES')
     plt.show()
     plt.clf()
 
