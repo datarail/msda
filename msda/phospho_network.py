@@ -153,14 +153,19 @@ def get_networkin_kinases(motif):
     return highest_scoring_kinase
 
 
-def generate_kinase_table(df_input):
+def get_annotated_subset(df_input):
     df_input.Motif = [m[1:-1] for m in df_input.Motif.tolist()]
     psp_motifs = [m.upper()[2:-2] for m  #
                   in df_kinase['SITE_+/-7_AA'].tolist()]
     nkin_motifs = [m.upper() for m
                    in df_networkin.sequence.tolist()]
     all_motifs = list(set(psp_motifs+nkin_motifs))
-    df_input_kinase = df_input[df_input.Motif.isin(all_motifs)]
+    df_annotated = df_input[df_input.Motif.isin(all_motifs)]
+    df_unannotated = df_input[~df_input.Motif.isin(all_motifs)]
+    return df_annotated, df_unannotated
+
+
+def generate_kinase_table(df_input_kinase):
     df_input_kinase = df_input_kinase.drop_duplicates()
     kinase_names, kinase_ids, orgs = [], [], []
     networkin_kinases = []
@@ -221,7 +226,7 @@ def generate_ksea_library(kin_sub_table, set_size=25):
         if len(sub_sites) >= set_size:
             gene_set = [kinase, ' '] + sub_sites
             gene_sets.append('\t'.join(gene_set))
-    return gene_sets        
+    return gene_sets   
 
 
 def generate_substrate_fasta(df):
@@ -236,7 +241,7 @@ def generate_substrate_fasta(df):
         id_line = seq_lines[0]
         try:
             # id = re.search('>(.*)HUMAN', id_line).group(1) + 'HUMAN'
-            id = re.search('>sp\|(.*)\|', id_line).group(1)
+            id = re.search('>(?:sp|tr)\|(.*)\|', id_line).group(1)
             ids.append(id)
             # seq_lines[0] = id
             substrate_fasta.append(">%s\n%s\n" % (id, sequence))
