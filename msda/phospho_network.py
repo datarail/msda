@@ -251,7 +251,7 @@ def generate_substrate_fasta(df):
 
 def create_rnk_file(df_input):
     fc = df_input.fc.tolist()
-    gene = df_input.Gene_Symbol.tolist()
+    gene = [g.upper() for g in df_input.Gene_Symbol.tolist()]
     site = df_input.Site.tolist()
 
     id = ["%s_%s" % (g, s) for g, s in zip(gene, site)]
