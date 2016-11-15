@@ -1,6 +1,4 @@
 import pandas as pd
-from matplotlib_venn import venn2, venn3
-import matplotlib.pyplot as plt
 import networkx as nx
 import requests
 import numpy as np
@@ -14,16 +12,8 @@ df_ptm = pd.read_table('resources/Regulatory_sites_appended.tsv',
 df_kinase = pd.read_csv('resources/kinase_substrate_dataset.csv')
 df_networkin = pd.read_table('resources/networkin_human_predictions.tsv')
 
-# df1 = pd.read_excel(file, sheetname=0, header=1)
-# df2 = pd.read_excel(file, sheetname=1, header=1)
-# df3 = pd.read_excel(file, sheetname=2, header=1)
-# df4 = pd.read_excel(file, sheetname=3, header=1)
 
-# this is afunction that renames column headers
 def rename_columns(df):
-    """ renames headers 
-    """
-    
     df = df.rename(columns={'Protein Id': 'Protein_ID',
                             'proteinID': 'Protein_ID',
                             'Site Position': 'Site_Position',
@@ -65,61 +55,6 @@ def split_sites(df, diff=None):
                                          'Motif', 'Site', 'score', 'fc'))
 
     return df_clean
-
-# df1 = split_sites(df1)
-# df2 = split_sites(df2)
-# df3 = split_sites(df3)
-# df4 = split_sites(df4)
-
-# df_input = pd.concat([df1, df2, df3, df4])
-
-# motifs = df_input.Motif.tolist()
-# uids = df_input.Protein_ID.tolist()
-
-# ptm_motifs = [m.upper()[1:-1] for m in df_ptm['SITE_+/-7_AA'].tolist()]
-# ptm_uids = df_ptm.ACC_ID.tolist()
-
-# kinase_motifs = [m.upper()[1:-1] for m in df_kinase['SITE_+/-7_AA'].tolist()]
-# kinase_uids = df_kinase.SUB_ACC_ID.tolist()
-
-# nkin_motifs = [m.upper() for m in df_networkin.sequence.tolist()]
-# kinase_motifs11 = [k[1:-1] for k in kinase_motifs]
-# pMS_motifs = [k[1:-1] for k in motifs]
-# df_input.Motif = pMS_motifs
-
-
-# venn2([set(motifs), set(ptm_motifs)],
-#       set_labels=('tnbc_phospho', 'downstream_annotations'))
-# plt.savefig('phosphoproteomics/dwnstrm_annotations_by_motif2.png')
-# plt.clf()
-
-# venn2([set(uids), set(ptm_uids)],
-#       set_labels=('tnbc_phospho', 'downstream_annotations'))
-# plt.savefig('phosphoproteomics/dwnstrm_annotaions_by_protein2.png')
-# plt.clf()
-
-# venn2([set(motifs), set(kinase_motifs)],
-#       set_labels=('tnbc_phospho', 'kinase_annotations'))
-# plt.savefig('phosphoproteomics/kinase_annotations_by_motif2.png')
-# plt.clf()
-
-# venn2([set(uids), set(kinase_uids)],
-#       set_labels=('tnbc_phospho', 'kinase_annotations'))
-# plt.savefig('phosphoproteomics/kinase_annotations_by_protein2.png')
-# plt.clf()
-
-# venn3([set(uids), set(kinase_uids), set(ptm_uids)],
-#       set_labels=('tnbc_phospho', 'kinase_annotations',
-#                   'downstream annotations'))
-# plt.savefig('phosphoproteomics/annotations_by_protein_venn3.png')
-# plt.clf()
-
-# venn3([set(motifs), set(kinase_motifs), set(ptm_motifs)],
-#       set_labels=('tnbc_phospho', 'kinase_annotations',
-#                   'downstream annotations'))
-# plt.savefig('phosphoproteomics/annotations_by_motif_venn3.png')
-# plt.clf()
-
 
 def get_kinases(motif, organism=None):
     if organism:
@@ -226,7 +161,7 @@ def generate_ksea_library(kin_sub_table, set_size=25):
         if len(sub_sites) >= set_size:
             gene_set = [kinase, ' '] + sub_sites
             gene_sets.append('\t'.join(gene_set))
-    return gene_sets   
+    return gene_sets
 
 
 def generate_substrate_fasta(df):
@@ -269,5 +204,3 @@ def get_fc(df_input, samples, base_sample):
     df = df_input[samples].div(df_input[base_sample], axis=0)
     df = df.apply(np.log2)
     return df
-#    
-#
