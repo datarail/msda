@@ -4,6 +4,7 @@ import requests
 import numpy as np
 import re
 import subprocess
+import mapping
 
 file = ('/Users/kartik/Dropbox (HMS-LSP)/BrCaLines_profiling/'
         'RAWDATA/massspec/run2015/ReplicateA_pSTY_Summary_031315.xlsx')
@@ -11,7 +12,9 @@ file = ('/Users/kartik/Dropbox (HMS-LSP)/BrCaLines_profiling/'
 df_ptm = pd.read_table('resources/Regulatory_sites_appended.tsv',
                        error_bad_lines=False)
 df_kinase = pd.read_csv('resources/kinase_substrate_dataset.csv')
-df_networkin = pd.read_table('resources/networkin_human_predictions.tsv')
+# df_networkin = pd.read_table('resources/networkin_human_predictions.tsv')
+df_networkin = pd.read_csv('resources/networkin_human'
+                           '_predictions_appended.csv')
 
 
 def rename_columns(df):
@@ -57,36 +60,37 @@ def split_sites(df, diff=None):
 
     return df_clean
 
-def get_kinases(motif, organism=None):
-    if organism:
-        df_org = df_kinase[df_kinase.SUB_ORGANISM == organism]
-    else:
-        df_org = df_kinase
-    df_org['MOTIF'] = [mtf[2:-2].upper()
-                       for mtf in df_org['SITE_+/-7_AA'].tolist()]
-    try:
-        kinase = df_org.KINASE[df_org.MOTIF == motif].values[0]
-        kinase_id = df_org.KIN_ACC_ID[df_org.MOTIF == motif].values[0]
-        kin_org = df_org.KIN_ORGANISM[df_org.MOTIF == motif].values[0]
-        sub_org = df_org.SUB_ORGANISM[df_org.MOTIF == motif].values[0]
-    except IndexError:
-        kinase = 'nan'
-        kinase_id = 'nan'
-        kin_org = 'nan'
-        sub_org = 'nan'
-    return kinase, kinase_id, kin_org, sub_org
+
+# def get_kinases(motif, organism=None):
+#     if organism:
+#         df_org = df_kinase[df_kinase.SUB_ORGANISM == organism]
+#     else:
+#         df_org = df_kinase
+#     df_org['MOTIF'] = [mtf[2:-2].upper()
+#                        for mtf in df_org['SITE_+/-7_AA'].tolist()]
+#     try:
+#         kinase = df_org.KINASE[df_org.MOTIF == motif].values[0]
+#         kinase_id = df_org.KIN_ACC_ID[df_org.MOTIF == motif].values[0]
+#         kin_org = df_org.KIN_ORGANISM[df_org.MOTIF == motif].values[0]
+#         sub_org = df_org.SUB_ORGANISM[df_org.MOTIF == motif].values[0]
+#     except IndexError:
+#         kinase = 'nan'
+#         kinase_id = 'nan'
+#         kin_org = 'nan'
+#         sub_org = 'nan'
+#     return kinase, kinase_id, kin_org, sub_org
 
 
-def get_networkin_kinases(motif):
-    motifp = motif[:5] + motif[5].lower() + motif[6:]
-    df_motif = df_networkin[df_networkin.sequence == motifp]
-    if not df_motif.empty:
-        highest_score = df_motif.networkin_score.max()
-        highest_scoring_kinase = df_motif.id[
-            df_motif.networkin_score == highest_score].values[0]
-    else:
-        highest_scoring_kinase = 'nan'
-    return highest_scoring_kinase
+# def get_networkin_kinases(motif):
+#     motifp = motif[:5] + motif[5].lower() + motif[6:]
+#     df_motif = df_networkin[df_networkin.sequence == motifp]
+#     if not df_motif.empty:
+#         highest_score = df_motif.networkin_score.max()
+#         highest_scoring_kinase = df_motif.id[
+#             df_motif.networkin_score == highest_score].values[0]
+#     else:
+#         highest_scoring_kinase = 'nan'
+#     return highest_scoring_kinase
 
 
 def get_annotated_subset(df_input):
@@ -101,29 +105,23 @@ def get_annotated_subset(df_input):
     return df_annotated, df_unannotated
 
 
-def generate_kinase_table(df_input_kinase):
-    df_input_kinase = df_input_kinase.drop_duplicates()
-    kinase_names, kinase_ids, orgs = [], [], []
-    networkin_kinases = []
-    for motif in df_input_kinase.Motif.tolist():
-        out = get_kinases(motif)
-        kinase_names.append(out[0])
-        kinase_ids.append(out[1])
-        orgs.append("%s_%s" % (out[2], out[3]))
-        networkin_kinases.append(get_networkin_kinases(motif))
-    df_output = df_input_kinase.copy()
-    df_output['KINASE'] = kinase_names
-    df_output['KINASE_ID'] = kinase_ids
-    df_output['organisms'] = orgs
-    df_output['networkin_kinase'] = networkin_kinases
-    return df_output
+# def generate_kinase_table(df_input_kinase):
+#     df_input_kinase = df_input_kinase.drop_duplicates()
+#     kinase_names, kinase_ids, orgs = [], [], []
+#     networkin_kinases = []
+#     for motif in df_input_kinase.Motif.tolist():
+#         out = get_kinases(motif)
+#         kinase_names.append(out[0])
+#         kinase_ids.append(out[1])
+#         orgs.append("%s_%s" % (out[2], out[3]))
+#         networkin_kinases.append(get_networkin_kinases(motif))
+#     df_output = df_input_kinase.copy()
+#     df_output['KINASE'] = kinase_names
+#     df_output['KINASE_ID'] = kinase_ids
+#     df_output['organisms'] = orgs
+#     df_output['networkin_kinase'] = networkin_kinases
+#     return df_output
 
-# df_out = generate_kinase_table(df_input)
-
-# subs = list(set(df_out.Gene_Symbol.tolist()))
-# kinases = list(set(df_out.KINASE.tolist()))
-# venn2([set(kinases), set(subs)], set_labels=('Kinases', 'Substrates'))
-# plt.savefig('phosphoproteomics/kinase_substrate.png')
 
 
 def generate_network(df_output):
@@ -208,6 +206,58 @@ def run_networkin(fasfile, psitefile, outfile):
                      '-b', 'resources/blast-2.2.17/bin/blastall', '9606',
                      fasfile, psitefile], stdout=f)
     return
+
+
+def get_networkin_kinases2(motif, df_nt):
+    motifp = motif[:5] + motif[5].lower() + motif[6:]
+
+    precomputed_kinases = df_networkin[df_networkin.sequence == motifp][
+        'string_identifier'].values.tolist()
+    computed_kinases = df_nt[df_nt['Peptide sequence window'] == motifp][
+        'Kinase/Phosphatase/Phospho-binding domain STRING ID'].values.tolist()
+
+    kinase_enps = list(set(precomputed_kinases + computed_kinases))
+    kinase_uids = [mapping.ensp2uid(id) for id in kinase_enps]
+    return kinase_uids
+
+
+def get_kinases2(motif, organism=None):
+    if organism:
+        df_org = df_kinase[df_kinase.SUB_ORGANISM == organism]
+    else:
+        df_org = df_kinase
+    df_org['MOTIF'] = [mtf[2:-2].upper()
+                       for mtf in df_org['SITE_+/-7_AA'].tolist()]
+
+    kinases = df_org.KINASE[df_org.MOTIF == motif].values.tolist()
+    kinase_ids = df_org.KIN_ACC_ID[df_org.MOTIF == motif].values.tolist()
+    kin_orgs = df_org.KIN_ORGANISM[df_org.MOTIF == motif].values.tolist()
+    sub_orgs = df_org.SUB_ORGANISM[df_org.MOTIF == motif].values.tolist()
+
+    return kinases, kinase_ids, kin_orgs, sub_orgs
+
+
+def generate_kinase_table2(df_input_kinase, df_nt):
+    df_input_kinase = df_input_kinase.drop_duplicates()
+    substrate, site, kinase_ids, source, motifs = [], [], [], [], []
+    for ind, motif in enumerate(df_input_kinase.Motif.tolist()):
+        out = get_kinases2(motif)
+        kinase_ids += out[1]
+        source += ['PSP'] * len(out[1])
+        nkins = get_networkin_kinases2(motif, df_nt)
+        kinase_ids += nkins
+        source += ['Networkin'] * len(nkins)
+        substrate += [df_input_kinase.Gene_Symbol.iloc[ind]] * (
+            len(out[1]) + len(nkins))
+        site += [df_input_kinase.Site.iloc[ind]] * (
+            len(out[1]) + len(nkins))
+        motifs += [motif] * (len(out[1]) + len(nkins))
+        
+    df_output = pd.DataFrame(zip(substrate, site, motifs,
+                                 kinase_ids, source),
+                             columns=['Gene_Symbol', 'Site', 'Motif',
+                                      'KINASE_ID', 'source'])
+    return df_output
 
 
 def get_fc(df_input, samples, base_sample):
