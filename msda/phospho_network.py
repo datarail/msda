@@ -18,10 +18,20 @@ df_networkin = pd.read_csv('resources/networkin_human'
 
 
 def rename_columns(df):
+    """ Rename columns so that they are standardized for further analysis
+    Parameter
+    ---------
+    df: pandas dataframe
+
+    Return
+    ------
+    df: pandas dataframe
+    """
+
     df = df.rename(columns={'Protein Id': 'Protein_ID',
                             'proteinID': 'Protein_ID',
                             'Site Position': 'Site_Position',
-                            # 'siteIDstr': 'Site_Position',
+                            'siteIDstr': 'Site_Position',
                             'geneSymbol': 'Gene_Symbol',
                             'gene_symbol': 'Gene_Symbol',
                             'Gene Symbol': 'Gene_Symbol',
@@ -31,7 +41,22 @@ def rename_columns(df):
 
 
 def split_sites(df, diff=None):
-    # split
+    """ refortm input dataframe by splitting phosphosite identifier (name_pos)
+    to seperate columns for amino acid and position, retrieve necessary
+     metadata for subsequent annotation with upstream kinases
+    
+    Parameter
+    ---------
+    df: pandas dataframe
+        phosphoproteomics dataset with rows as features and samples as columns
+    diff: str
+       name of sample for which fold change is to be calculates
+
+    Return
+    ------
+    df_clean: pandas dataframe
+         dataframe that contains only metadata for all phosphosites
+    """
     df = rename_columns(df)
     uids, names, motifs, sites, mx, fc = [], [], [], [], [], []
     for index in range(len(df)):
@@ -62,6 +87,22 @@ def split_sites(df, diff=None):
 
 
 def get_annotated_subset(df_input):
+    """ splits dataframe into subsets based on whether the 
+    phosphosites have upstream kinases
+    
+    Parameter
+    ---------
+    df_input: pandas dataframe
+       input dataframe with metadata for allphosphosites
+
+    Return:
+    df_annotated: pandas dataframe
+       dataframe of phosphoite metadata for which annotation are 
+       available on PSP and Networkin
+
+    df_unnannotated: pandas dataframe
+       dataframe pf phosphosite metdata for which annotations are not available
+    """
     df_input.Motif = [m[1:-1] for m in df_input.Motif.tolist()]
     psp_motifs = [m.upper()[2:-2] for m  #
                   in df_kinase['SITE_+/-7_AA'].tolist()]
@@ -74,6 +115,8 @@ def get_annotated_subset(df_input):
 
 
 def generate_network(df_output):
+    """ generates kinase-substrate network using Networkx package
+    """
     G = nx.MultiDiGraph()
     for index in range(len(df_output)):
         kinase = df_output.KINASE.iloc[index]
@@ -88,6 +131,22 @@ def generate_network(df_output):
 
 
 def generate_ksea_library(kin_sub_table, set_size=25):
+    """ generate custom kinase set library with kinases as terms and 
+    corresponding target  (phosphoites) list
+
+    Parameter
+    ---------
+    kin_sub_table: csv file
+       csv file that maps phosphosites to upstream kinases 
+       from PSP and Networkin
+    set_size: minimum size of kinase sets in the library
+
+    Return
+    ------
+    gene_sets: list of strings
+       each element in the list is a tab-separated entry of kinases 
+       and downstream sites 
+    """
     df = pd.read_csv(kin_sub_table)
     all_kinases = list(set(df.KINASE.tolist()))
     gene_sets = []
@@ -105,6 +164,27 @@ def generate_ksea_library(kin_sub_table, set_size=25):
 
 
 def generate_substrate_fasta(df):
+    """ gemerates fasta sequence files containing sequences of
+    all proteins that contain phosphosites that do not have kinase
+    annotations in PSP or Networkin. The outputs of the function
+    will be used as input to run Networkin locally and predict kinases
+   
+    Parameter
+    ---------
+    df: pandas dataframe
+       subset of phoproteomics data (metadata) that do
+        not have kinase annotations
+
+    Return
+    ------
+    substrate_fasta: list of strings
+       each pair of elements in the list is a uniprot id (eg: '>P01345')
+       followed by the sequence
+    df2: pandas dataframe
+       dataframe with uniprot id, amino acid and site of each phosphosite
+
+    """
+
     substrate_fasta = []
     ids, aa, pos = [], [], []
     for substrate in df.Protein_ID.tolist():
@@ -130,6 +210,20 @@ def generate_substrate_fasta(df):
 
 
 def create_rnk_file(df_input):
+    """ creates file of fold change values to be used as input for GSEA
+
+    Parameter
+    ---------
+    df_input: pandas dataframe
+       input dataframe that contains phosphoste metadata and 
+    fold change values (log2) of sample of interest
+
+    Return
+    ------
+    df_rnk: pandas dataframe
+       2-column dataframe of psp identifier (uniprotId_site) and 
+    corresponding fold change value
+    """
     fc = df_input.fc.tolist()
     gene = [g.upper() for g in df_input.Gene_Symbol.tolist()]
     site = df_input.Site.tolist()
@@ -141,6 +235,20 @@ def create_rnk_file(df_input):
 
 
 def run_networkin(fasfile, psitefile, outfile):
+    """ run Networkin locally to generate kinase prediction
+    Parameter:
+    ----------
+    fastafile: str
+        path for sequence file (.fas) of all subtrates with unnanotated sites
+    psitefile: str
+        path for file (.res) with tab seperated values 
+        of uniprot_id, amino acid and site
+    outfile: str
+        path for output file with Networkin predictions
+    
+    Return
+    ------
+    """
     f = open(outfile, 'wb')
     subprocess.call(['resources/NetworKIN_release3.0/NetworKIN.py',
                      '-n', 'resources/NetPhorest/netphorest',
@@ -150,6 +258,21 @@ def run_networkin(fasfile, psitefile, outfile):
 
 
 def get_networkin_kinases(motif, df_nt):
+    """ create list of kinase uniprot ids obtained 
+    from Networkin prediction
+    
+    Parameter
+    --------
+    motif: str
+        motif sequence of phosphosites
+    df_nt: pandas dataframe
+        dataframe of results from Netowkrin predcitons run locally
+
+    Return
+    ------
+    kinase_uids: list
+        list of kinase uniprto ids
+    """
     motifp = motif[:5] + motif[5].lower() + motif[6:]
 
     precomputed_kinases = df_networkin[df_networkin.sequence == motifp][
@@ -163,6 +286,29 @@ def get_networkin_kinases(motif, df_nt):
 
 
 def get_kinases(motif, organism=None):
+    """ Get upstream kinases for given motif from PSP dataset
+
+    Parameter
+    ---------
+    motif: str
+       sequence of psp motif
+    organism: str
+       organism from which annotations are to be extracted
+
+    Return
+    ------
+    kinases: list
+       list of names of kinases
+    kinase_ids: list
+        list of kinase uniprot ids
+    kin_orgs: list
+        list of corrsponding organism for kinases
+         in the kinase_substrate pair
+    sub_orgs: list
+        list of corresponding organism for substrates 
+        in the kinase_substrate pair
+    
+    """
     if organism:
         df_org = df_kinase[df_kinase.SUB_ORGANISM == organism]
     else:
@@ -179,6 +325,22 @@ def get_kinases(motif, organism=None):
 
 
 def generate_kinase_table(df_input_kinase, df_nt):
+    """ Aggregate information on kinase annotations for 
+    phosphosites from PSP and Networkin 
+
+    Parameter
+    ---------
+    df_input: pandas dataframe
+      kinase annotatiosn from Phosphosite
+    df_nt: pandas dataframe
+      kinase annotations form Networkin predictions
+
+    Return
+    -----
+    df_output: pandas dataframe
+       Long table of phosphosite metadata and corresponding kinases
+    """
+    
     df_input_kinase = df_input_kinase.drop_duplicates()
     substrate, site, kinase_ids, source, motifs = [], [], [], [], []
     for ind, motif in enumerate(df_input_kinase.Motif.tolist()):
@@ -202,6 +364,21 @@ def generate_kinase_table(df_input_kinase, df_nt):
 
 
 def get_fc(df_input, samples, base_sample):
+    """ compute fold change of samples relative to control
+    Parameter
+    ---------
+    df_input: pandas dataframe
+        phosphoproteomics dataset
+    sample: list of str
+       sample names
+    base_sample:str
+       sample that serves as control
+       
+    Return
+    ------
+    df: pandas dataframe
+       samples normalized by base_sample
+    """
     df = df_input[samples].div(df_input[base_sample], axis=0)
     df = df.apply(np.log2)
     return df
