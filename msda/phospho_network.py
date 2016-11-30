@@ -11,7 +11,7 @@ file = ('/Users/kartik/Dropbox (HMS-LSP)/BrCaLines_profiling/'
 
 df_ptm = pd.read_table('resources/Regulatory_sites_appended.tsv',
                        error_bad_lines=False)
-df_kinase = pd.read_csv('resources/kinase_substrate_dataset.csv')
+df_kinase = pd.read_csv('resources/kinase_substrate_dataset_2016.csv')
 # df_networkin = pd.read_table('resources/networkin_human_predictions.tsv')
 df_networkin = pd.read_csv('resources/networkin_human'
                            '_predictions_appended.csv')
@@ -28,15 +28,15 @@ def rename_columns(df):
     df: pandas dataframe
     """
 
-    df = df.rename(columns={'Protein Id': 'Protein_ID',
-                            'proteinID': 'Protein_ID',
+    df = df.rename(columns={'Protein Id': 'Uniprot_ID',
+                            'proteinID': 'Uniprot_ID',
                             'Site Position': 'Site_Position',
-                            'siteIDstr': 'Site_Position',
+                            # 'siteIDstr': 'Site_Position',
                             'geneSymbol': 'Gene_Symbol',
                             'gene_symbol': 'Gene_Symbol',
                             'Gene Symbol': 'Gene_Symbol',
                             'motifPeptideStr': 'Motif',
-                            'Localization score': 'Max Score'})
+                            'Localization score': 'Max_Score'})
     return df
 
 
@@ -64,23 +64,26 @@ def split_sites(df, diff=None):
         motif_list = motif.split(';')
         site = str(df.Site_Position.iloc[index])
         site_list = site.split(';')
-        uids += [df.Protein_ID.iloc[index]] * len(motif_list)
+        uids += [df.Uniprot_Id.iloc[index]] * len(motif_list)
         names += [df.Gene_Symbol.iloc[index]] * len(motif_list)
         motifs += motif_list
         sites += site_list
-        mx_score = str(df['Max Score'].iloc[index]).split(';')
+        mx_score = str(df['Max_Score'].iloc[index]).split(';')
         mx += mx_score
         if diff is not None:
             fc += [df[diff].iloc[index]] * len(motif_list)
-    uids = [id.split('|')[1] for id in uids]
+    try:
+        uids = [id.split('|')[1] for id in uids]
+    except IndexError:
+        pass
     sites = ['%s%s' % (m[6], s) for m, s in zip(motifs, sites)]
     if diff is None:
         df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx),
-                                columns=('Protein_ID', 'Gene_Symbol',
+                                columns=('Uniprot_Id', 'Gene_Symbol',
                                          'Motif', 'Site', 'score'))
     else:
         df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx, fc),
-                                columns=('Protein_ID', 'Gene_Symbol',
+                                columns=('Uniprot_Id', 'Gene_Symbol',
                                          'Motif', 'Site', 'score', 'fc'))
 
     return df_clean
@@ -122,7 +125,7 @@ def generate_network(df_output):
         kinase = df_output.KINASE.iloc[index]
         kinase_id = df_output.KINASE_ID.iloc[index]
         substrate = df_output.Gene_Symbol.iloc[index]
-        sub_id = df_output.Protein_ID.iloc[index]
+        sub_id = df_output.Uniprot_Id.iloc[index]
         site = df_output.Site.iloc[index]
         G.add_node(substrate, UP=sub_id)
         G.add_node(kinase, UP=kinase_id)
@@ -187,7 +190,7 @@ def generate_substrate_fasta(df):
 
     substrate_fasta = []
     ids, aa, pos = [], [], []
-    for substrate in df.Protein_ID.tolist():
+    for substrate in df.Uniprot_Id.tolist():
         r = requests.get('http://www.uniprot.org/uniprot/%s.fasta' %
                          substrate)
         # substrate_fasta.append(r.text)
@@ -200,7 +203,7 @@ def generate_substrate_fasta(df):
             ids.append(id)
             # seq_lines[0] = id
             substrate_fasta.append(">%s\n%s\n" % (id, sequence))
-            site = df.Site[df.Protein_ID == substrate].values[0]
+            site = df.Site[df.Uniprot_Id == substrate].values[0]
             aa.append(site[0])
             pos.append(site[1:])
         except AttributeError:
@@ -276,13 +279,19 @@ def get_networkin_kinases(motif, df_nt):
     motifp = motif[:5] + motif[5].lower() + motif[6:]
 
     precomputed_kinases = df_networkin[df_networkin.sequence == motifp][
-        'string_identifier'].values.tolist()
+        'string_path'].values.tolist()
+    precomputed_kinases = [s.split(',')[0] for s in precomputed_kinases]
+    precomp_scores = df_networkin[df_networkin.sequence == motifp][
+        'networkin_score'].values.tolist()
     computed_kinases = df_nt[df_nt['Peptide sequence window'] == motifp][
         'Kinase/Phosphatase/Phospho-binding domain STRING ID'].values.tolist()
+    comp_scores = df_nt[df_nt['Peptide sequence window'] == motifp][
+        'NetworKIN score'].values.tolist()
 
-    kinase_enps = list(set(precomputed_kinases + computed_kinases))
+    kinase_enps = precomputed_kinases + computed_kinases
     kinase_uids = [mapping.ensp2uid(id) for id in kinase_enps]
-    return kinase_uids
+    networkin_scores = precomp_scores + comp_scores
+    return kinase_uids, networkin_scores
 
 
 def get_kinases(motif, organism=None):
@@ -340,26 +349,28 @@ def generate_kinase_table(df_input_kinase, df_nt):
     df_output: pandas dataframe
        Long table of phosphosite metadata and corresponding kinases
     """
-    
     df_input_kinase = df_input_kinase.drop_duplicates()
-    substrate, site, kinase_ids, source, motifs = [], [], [], [], []
+    substrate, site, kinase_ids = [], [], []
+    source, motifs, confidence = [], [], []
     for ind, motif in enumerate(df_input_kinase.Motif.tolist()):
         out = get_kinases(motif)
         kinase_ids += out[1]
         source += ['PSP'] * len(out[1])
+        confidence += [100] * len(out[1])
         nkins = get_networkin_kinases(motif, df_nt)
-        kinase_ids += nkins
-        source += ['Networkin'] * len(nkins)
+        kinase_ids += nkins[0]
+        source += ['Networkin'] * len(nkins[0])
+        confidence += nkins[1]
         substrate += [df_input_kinase.Gene_Symbol.iloc[ind]] * (
-            len(out[1]) + len(nkins))
+            len(out[1]) + len(nkins[0]))
         site += [df_input_kinase.Site.iloc[ind]] * (
-            len(out[1]) + len(nkins))
-        motifs += [motif] * (len(out[1]) + len(nkins))
-        
+            len(out[1]) + len(nkins[0]))
+        motifs += [motif] * (len(out[1]) + len(nkins[0]))
+    print len(substrate), len(source)    
     df_output = pd.DataFrame(zip(substrate, site, motifs,
-                                 kinase_ids, source),
+                                 kinase_ids, source, confidence),
                              columns=['Gene_Symbol', 'Site', 'Motif',
-                                      'KINASE_ID', 'source'])
+                                      'KINASE_ID', 'source', 'confidence'])
     return df_output
 
 
@@ -373,7 +384,7 @@ def get_fc(df_input, samples, base_sample):
        sample names
     base_sample:str
        sample that serves as control
-       
+
     Return
     ------
     df: pandas dataframe
