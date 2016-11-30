@@ -190,7 +190,7 @@ def generate_substrate_fasta(df):
 
     substrate_fasta = []
     ids, aa, pos = [], [], []
-    for substrate in df.Uniprot_Id.tolist():
+    for ind, substrate in enumerate(df.Uniprot_Id.tolist()):
         r = requests.get('http://www.uniprot.org/uniprot/%s.fasta' %
                          substrate)
         # substrate_fasta.append(r.text)
@@ -203,7 +203,7 @@ def generate_substrate_fasta(df):
             ids.append(id)
             # seq_lines[0] = id
             substrate_fasta.append(">%s\n%s\n" % (id, sequence))
-            site = df.Site[df.Uniprot_Id == substrate].values[0]
+            site = df.Site.iloc[ind]
             aa.append(site[0])
             pos.append(site[1:])
         except AttributeError:
