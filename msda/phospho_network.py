@@ -58,14 +58,15 @@ def split_sites(df, diff=None):
          dataframe that contains only metadata for all phosphosites
     """
     df = rename_columns(df)
-    uids, names, motifs, sites, mx, fc = [], [], [], [], [], []
+    uids, names, motifs, sites, mx, type, fc = [], [], [], [], [], [], []
     for index in range(len(df)):
-        motif = df.Motif.iloc[index]
+        motif = df.Motif.iloc[index][1:-1]
         motif_list = motif.split(';')
         site = str(df.Site_Position.iloc[index])
         site_list = site.split(';')
         uids += [df.Uniprot_Id.iloc[index]] * len(motif_list)
         names += [df.Gene_Symbol.iloc[index]] * len(motif_list)
+        type += [df.Origin.iloc[index].split('_')[1][0]] * len(motif_list)
         motifs += motif_list
         sites += site_list
         mx_score = str(df['Max_Score'].iloc[index]).split(';')
@@ -78,13 +79,13 @@ def split_sites(df, diff=None):
         pass
     sites = ['%s%s' % (m[6], s) for m, s in zip(motifs, sites)]
     if diff is None:
-        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx),
+        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx, type),
                                 columns=('Uniprot_Id', 'Gene_Symbol',
-                                         'Motif', 'Site', 'score'))
+                                         'Motif', 'Site', 'score', 'type'))
     else:
-        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx, fc),
+        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx, type, fc),
                                 columns=('Uniprot_Id', 'Gene_Symbol',
-                                         'Motif', 'Site', 'score', 'fc'))
+                                         'Motif', 'Site', 'score', type, 'fc'))
 
     return df_clean
 
@@ -151,11 +152,11 @@ def generate_ksea_library(kin_sub_table, set_size=25):
        and downstream sites 
     """
     df = pd.read_csv(kin_sub_table)
-    all_kinases = list(set(df.KINASE.tolist()))
+    all_kinases = list(set([m.upper() for m in df.KINASE_ID.tolist()]))
     gene_sets = []
 
     for kinase in all_kinases:
-        df1 = df[df.KINASE == kinase]
+        df1 = df[df.KINASE_ID == kinase]
         subs = [str(g).upper() for g in df1.Gene_Symbol.tolist()]
         sites = df1.Site.tolist()
         sub_sites = list(set(['%s_%s' % (sub, site) for sub, site
@@ -350,7 +351,7 @@ def generate_kinase_table(df_input_kinase, df_nt):
        Long table of phosphosite metadata and corresponding kinases
     """
     df_input_kinase = df_input_kinase.drop_duplicates()
-    substrate, site, kinase_ids = [], [], []
+    substrate, site, ptype, kinase_ids = [], [], [], []
     source, motifs, confidence = [], [], []
     for ind, motif in enumerate(df_input_kinase.Motif.tolist()):
         out = get_kinases(motif)
@@ -365,9 +366,12 @@ def generate_kinase_table(df_input_kinase, df_nt):
             len(out[1]) + len(nkins[0]))
         site += [df_input_kinase.Site.iloc[ind]] * (
             len(out[1]) + len(nkins[0]))
+        ptype += [df_input_kinase.type.iloc[ind]] * (
+            len(out[1]) + len(nkins[0]))
         motifs += [motif] * (len(out[1]) + len(nkins[0]))
-    print len(substrate), len(source)    
-    df_output = pd.DataFrame(zip(substrate, site, motifs,
+    print len(substrate), len(source)
+    site2 = ["%s_%s" % (s, t) for s, t in zip(site, ptype)]
+    df_output = pd.DataFrame(zip(substrate, site2, motifs,
                                  kinase_ids, source, confidence),
                              columns=['Gene_Symbol', 'Site', 'Motif',
                                       'KINASE_ID', 'source', 'confidence'])
