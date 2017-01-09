@@ -1,6 +1,7 @@
 import pandas as pd
 import re
 from mapping import uid2gn
+import numpy as np
 
 df_map = pd.read_csv('resources/Uniprot_sec_to_prim.csv', sep='\t')
 
@@ -78,3 +79,20 @@ def get_primary_ids(secondary_id):
     ind = df_map.Secondary_ID.tolist().index(secondary_id)
     primary_id = df_map.Primary_ID[ind]
     return primary_id
+
+
+def noise_filter(df):
+    diffcut = 1
+    filtered_index = []
+    for ind in len(df):
+        x1 = df.loc[ind, df.columns.to_series().str.contains('Rep1').
+                    tolist()].values.tolist()
+        x2 = df.loc[ind, df.columns.to_series().str.contains('Rep2').
+                    tolist()].values.tolist()
+        meandelta = np.mean(np.abs([a-b for a, b in zip(x1, x2)]))
+        meanval = [(a+b)/2.0 for a, b in zip(x1, x2)]
+        maxdiff = np.max(meanval) - np.min(meanval)
+        if (maxdiff - meandelta) > diffcut:
+            filtered_index.append(ind)
+    df2 = df.loc[filtered_index]
+    return df2
