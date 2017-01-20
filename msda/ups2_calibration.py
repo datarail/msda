@@ -221,7 +221,7 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
     num_theor_peptides = []
     if samples is None:
         samples = df.columns.tolist()[2:]
-    for uid in df['PROTEIN_ID'].tolist():
+    for uid in df['Uniprot_Id'].tolist():
         try:
             num_theor_peptides.append(df_ref[
                 df_ref.UniprotID == uid].num_theoretical_peptides.values[0])
