@@ -7,6 +7,8 @@ from sklearn.lda import LDA
 import numpy as np
 from itertools import combinations
 from msda import adjustText
+from collections import OrderedDict
+import matplotlib.cm as cm
 
 def normalize_min_max(df):
     df = df.copy()
@@ -36,17 +38,19 @@ def hierarchical_clustering(df, samples, plot_name='hc_plot.png',
     plt.clf()
 
 
-def pca(df, samples, num_components=2, plot_prefix='pca_plot_',
-        sample_map=None, color_map=None):
+def pca(df, meta_df, num_components=2, label=None, plot_prefix='pca_plot_'):
     df = df.copy()
+    samples = meta_df.Sample.tolist()
+    assert set(samples) < df.columns.tolist(), "sample names mismatched"
     df = df.transpose()
     df = df.ix[samples]
-    # df_nrm = normalize_min_max(df)
     X = df.values
-    if sample_map:
+    if label:
+        sample_map, color_map = generate_map(meta_df, label)
         y = np.array([sample_map[sample] for sample in df.index.tolist()])
     else:
         y = None
+        color_map = None
     pca = PCA(n_components=num_components)
     X_pca = pca.fit_transform(X)
     explained_variance = pca.explained_variance_ratio_
@@ -63,7 +67,7 @@ def plot_pca(X_pca, explained_variance, samples,
     Xs_pca[:, 0] = X_pca[:, pcs[0]]
     Xs_pca[:, 1] = X_pca[:, pcs[1]]
     if not labels:
-        plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5)  #, s=20)
+        plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5)  # s=20)
     elif labels:
         for lab, col in labels.iteritems():
             plt.scatter(Xs_pca[y == lab, 0], Xs_pca[y == lab, 1],
@@ -89,6 +93,17 @@ def plot_pca(X_pca, explained_variance, samples,
     # plt.tight_layout()
     plt.savefig(plot_name, dpi=600)
     plt.clf()
+
+
+def generate_map(meta_df, label):
+    sample_map = OrderedDict()
+    for sample in meta_df.Sample.tolist():
+        sample_map[sample] = meta_df[label][
+            meta_df.Sample == sample].values[0]
+    sample_labels = list(set([types for types in sample_map.values()]))
+    colors = cm.rainbow(np.linspace(0, 1, len(sample_labels)))
+    label_map = {s: c for s, c in zip(sample_labels, colors)}
+    return sample_map, label_map
 
 
 def lda(df, samples, sample_labels, plot_name='lda_plot.png'):
