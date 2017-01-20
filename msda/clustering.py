@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.lda import LDA
 import numpy as np
 from itertools import combinations
-
+from msda import adjustText
 
 def normalize_min_max(df):
     df = df.copy()
@@ -63,15 +63,22 @@ def plot_pca(X_pca, explained_variance, samples,
     Xs_pca[:, 0] = X_pca[:, pcs[0]]
     Xs_pca[:, 1] = X_pca[:, pcs[1]]
     if not labels:
-        plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5) #, s=20)
+        plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5)  #, s=20)
     elif labels:
         for lab, col in labels.iteritems():
             plt.scatter(Xs_pca[y == lab, 0], Xs_pca[y == lab, 1],
                         label=lab, color=col)
+    # texts = []        
     for sample, pc1, pc2 in zip(samples, Xs_pca[:, 0], Xs_pca[:, 1]):
         plt.annotate(sample,
                      xy=(pc1, pc2), xytext=(-3, 3), size=5,
                      textcoords='offset points', ha='right', va='bottom')
+#        texts.append(plt.text(pc1, pc2, sample,
+#                              bbox={'pad': 0, 'alpha': 0}, size=7))
+#    adjustText.adjust_text(Xs_pca[:,0], Xs_pca[:, 1], texts,
+#                arrowprops=dict(arrowstyle="-", color='k', lw=0.5),
+#                bbox={'pad':0, 'alpha':0}, size=7)
+
     plt.xlabel('PC %d (explained variance = %.2f%%)' %
                (pcs[0]+1, 100 * explained_variance[pcs[0]]))
     plt.ylabel('PC %d (explained variance = %.2f%%)' %
