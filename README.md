@@ -13,18 +13,18 @@ If the experiment samples are split across two or more 10-plex experiments and a
 ```
 df = preprocssing.pd_import([data_file1, data_file2], meta_df)
 ```
-The next exampe shows how principal component analysis or hierarchichal clustering of the dataset can be done. 
+The next example shows how principal component analysis or hierarchichal clustering of the dataset can be done. 
 ``` 
 from msda import clustering
 clustering.pca(df, meta_df, num_components=2, label=None, output_file='figure.png')
 clustering.hierarchical_clustering(df, output_file='figure.png')
 ```
-If the metadata file contains additional columns with categorical information about the samples, then the PCA plots can also depict the categories using different colors. In order to do so, simply pass the name of the column in the metadat file to the argument 'label'.
+If the metadata file contains additional columns with categorical information about the samples, then the PCA plots can also depict the categories using different colors. In order to do so, simply pass the name of the column in the metadata file to the argument 'label'.
 ``` 
 clustering.pca(df, meta_df, num_components=2, label='tumor_subtype', output_file)
 ```
 
-Mass-spec based proteomics measurements provide relative intensity measurements for each protein i.e intensities for a given protein can be compared between samples, but intensities between proteins cannot be comapred. Intensity based absolute quantifcation (iBAQ) is a  normaliation methods that enables comparison acrros proteins. The example below show hot to map the dataset onto iBAQ space.
+Mass-spec based proteomics measurements provide relative intensity measurements for each protein i.e intensities for a given protein can be compared between samples, but intensities between proteins cannot be comapred. Intensity based absolute quantifcation (iBAQ) is a  normaliation methods that enables comparison across proteins. The example below show how to map the dataset onto iBAQ space.
 ```
 from msda import ups2_calibration as uc
 df_ibaq = uc.compute_ibaq_dataset(df, organism='human', meta_df)
