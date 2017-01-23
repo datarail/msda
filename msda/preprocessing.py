@@ -2,6 +2,7 @@ import pandas as pd
 import re
 from mapping import uid2gn
 import numpy as np
+import batch_normalization as bn
 
 df_map = pd.read_csv('resources/Uniprot_sec_to_prim.csv', sep='\t')
 
@@ -84,10 +85,10 @@ def get_primary_ids(secondary_id):
 def noise_filter(df):
     diffcut = 1
     filtered_index = []
-    for ind in len(df):
-        x1 = df.loc[ind, df.columns.to_series().str.contains('Rep1').
+    for ind in df.index.tolist():
+        x1 = df.loc[ind, df.columns.to_series().str.contains('r1').
                     tolist()].values.tolist()
-        x2 = df.loc[ind, df.columns.to_series().str.contains('Rep2').
+        x2 = df.loc[ind, df.columns.to_series().str.contains('r2').
                     tolist()].values.tolist()
         meandelta = np.mean(np.abs([a-b for a, b in zip(x1, x2)]))
         meanval = [(a+b)/2.0 for a, b in zip(x1, x2)]
@@ -96,3 +97,72 @@ def noise_filter(df):
             filtered_index.append(ind)
     df2 = df.loc[filtered_index]
     return df2
+
+
+def rank_batch_overlap(dfs):
+    arr = np.zeros([len(dfs)]*2)
+    for i in range(len(dfs)):
+        for j in range(len(dfs)):
+            uids1 = dfs[i].index.tolist()
+            uids2 = dfs[j].index.tolist()
+            arr[i, j] = len(set(uids1).intersection(uids2))
+    batches = ['batch_%d' % (d+1) for d in range(len(dfs))]
+    df = pd.DataFrame(arr, columns=batches, index=batches)
+    overlap_score = []
+    for b in batches:
+        overlap_score.append(df[b].sum() - df[b].loc[b])
+    df['overlap'] = overlap_score
+    df = df.sort('overlap', ascending=False)
+    rank = [int(d.split('_')[1]) for d in df.index.tolist()]
+    df_rank = [x for y, x in sorted(zip(rank, dfs))]
+    return df_rank
+
+
+def strip_metadata(df, samples):
+    # df.index = df.Uniprot_Id.tolist()
+    df = df[samples]
+    df = df.groupby(df.index).sum()
+    return df
+
+
+def rename_labels(df, meta_df):
+    tmt_labels = meta_df.TMT_label.tolist()
+    samples = meta_df.Sample.tolist()
+    df.index = df.Uniprot_Id.tolist()
+    sample_key = {t: s for t, s in zip(tmt_labels, samples)}
+    df = df.rename(columns=sample_key)
+    df_samples = [s for s in df.columns.tolist() if s in samples]
+    df = df[df_samples]
+    df = df.loc[:, ~df.columns.duplicated()]
+    return df, df_samples
+
+
+def rename_bridge(df, batch_num):
+    cols = df.columns.tolist()
+    cols[-1] = 'Bridge%d' % batch_num
+    df.columns = cols
+    return df
+
+
+def merge_batches(filelist, meta_df):
+    df_list = []
+    for file in filelist:
+        df = pd_import(file)
+        df = df.drop_duplicates(['Uniprot_Id'])
+        df, samples = rename_labels(df, meta_df)
+        # df.index = df.Uniprot_Id.tolist()
+        # df = strip_metadata(df, samples)
+        df_list.append(df)
+
+    df_rank = rank_batch_overlap(df_list)
+    df_ref = df_rank[0]
+    dfA_list = []
+    for df in df_list:
+        dfA_list.append(bn.normalize_mix(df, df_ref))
+    df_rank = rank_batch_overlap(dfA_list)
+    dfb_list = []
+    for df in dfA_list:
+        dfb_list.append(bn.normalize_per_protein(df, df_rank))
+    # dfc_list = [rename_bridge(df, num+1) for num, df in enumerate(dfb_list)]
+    df_merged = pd.concat(dfb_list, axis=1)
+    return df_merged
