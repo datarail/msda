@@ -28,15 +28,16 @@ def rename_columns(df):
     df: pandas dataframe
     """
 
-    df = df.rename(columns={'Protein Id': 'Uniprot_ID',
-                            'proteinID': 'Uniprot_ID',
+    df = df.rename(columns={'Protein Id': 'Uniprot_Id',
+                            'proteinID': 'Uniprot_Id',
                             'Site Position': 'Site_Position',
                             # 'siteIDstr': 'Site_Position',
                             'geneSymbol': 'Gene_Symbol',
                             'gene_symbol': 'Gene_Symbol',
                             'Gene Symbol': 'Gene_Symbol',
                             'motifPeptideStr': 'Motif',
-                            'Localization score': 'Max_Score'})
+                            'Localization score': 'Max_Score',
+                            'Max Score': 'Max_Score'})
     return df
 
 
@@ -60,13 +61,16 @@ def split_sites(df, diff=None):
     df = rename_columns(df)
     uids, names, motifs, sites, mx, type, fc = [], [], [], [], [], [], []
     for index in range(len(df)):
-        motif = df.Motif.iloc[index][1:-1]
+        motif = df.Motif.iloc[index]
         motif_list = motif.split(';')
         site = str(df.Site_Position.iloc[index])
         site_list = site.split(';')
         uids += [df.Uniprot_Id.iloc[index]] * len(motif_list)
         names += [df.Gene_Symbol.iloc[index]] * len(motif_list)
-        type += [df.Origin.iloc[index].split('_')[1][0]] * len(motif_list)
+        try:
+            type += [df.Origin.iloc[index].split('_')[1][0]] * len(motif_list)
+        except IndexError:
+            type += [df.Origin.iloc[index][0]] * len(motif_list)
         motifs += motif_list
         sites += site_list
         mx_score = str(df['Max_Score'].iloc[index]).split(';')
@@ -85,7 +89,7 @@ def split_sites(df, diff=None):
     else:
         df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx, type, fc),
                                 columns=('Uniprot_Id', 'Gene_Symbol',
-                                         'Motif', 'Site', 'score', type, 'fc'))
+                                         'Motif', 'Site', 'score', 'type', 'fc'))
 
     return df_clean
 
@@ -152,11 +156,11 @@ def generate_ksea_library(kin_sub_table, set_size=25):
        and downstream sites 
     """
     df = pd.read_csv(kin_sub_table)
-    all_kinases = list(set([m.upper() for m in df.KINASE_ID.tolist()]))
+    all_kinases = list(set([m.upper() for m in df.KINASE.tolist()]))
     gene_sets = []
 
     for kinase in all_kinases:
-        df1 = df[df.KINASE_ID == kinase]
+        df1 = df[df.KINASE == kinase]
         subs = [str(g).upper() for g in df1.Gene_Symbol.tolist()]
         sites = df1.Site.tolist()
         sub_sites = list(set(['%s_%s' % (sub, site) for sub, site
@@ -229,10 +233,11 @@ def create_rnk_file(df_input):
     corresponding fold change value
     """
     fc = df_input.fc.tolist()
-    gene = [g.upper() for g in df_input.Gene_Symbol.tolist()]
+    gene = [str(g).upper() for g in df_input.Gene_Symbol.tolist()]
     site = df_input.Site.tolist()
+    ty = [m[0].upper() for m in df_input.type.tolist()]
 
-    id = ["%s_%s" % (g, s) for g, s in zip(gene, site)]
+    id = ["%s_%s_%s" % (g, s, t) for g, s, t in zip(gene, site, ty)]
     df_rnk = pd.DataFrame(zip(id, fc), columns=('ps_id', 'fc'))
     df_rnk = df_rnk.sort(['fc'], ascending=True)
     return df_rnk
@@ -351,10 +356,11 @@ def generate_kinase_table(df_input_kinase, df_nt):
        Long table of phosphosite metadata and corresponding kinases
     """
     df_input_kinase = df_input_kinase.drop_duplicates()
-    substrate, site, ptype, kinase_ids = [], [], [], []
+    substrate, site, ptype, kinases, kinase_ids = [], [], [], [], []
     source, motifs, confidence = [], [], []
     for ind, motif in enumerate(df_input_kinase.Motif.tolist()):
         out = get_kinases(motif)
+        # kinases += out[0]
         kinase_ids += out[1]
         source += ['PSP'] * len(out[1])
         confidence += [100] * len(out[1])
@@ -369,12 +375,15 @@ def generate_kinase_table(df_input_kinase, df_nt):
         ptype += [df_input_kinase.type.iloc[ind]] * (
             len(out[1]) + len(nkins[0]))
         motifs += [motif] * (len(out[1]) + len(nkins[0]))
-    print len(substrate), len(source)
+    
     site2 = ["%s_%s" % (s, t) for s, t in zip(site, ptype)]
+    print len(substrate), len(source), len(site2), len(motifs), len(kinases)
+    kinases = [mapping.uid2gn(id) for id in kinase_ids]
     df_output = pd.DataFrame(zip(substrate, site2, motifs,
-                                 kinase_ids, source, confidence),
+                                 kinases, kinase_ids, source, confidence),
                              columns=['Gene_Symbol', 'Site', 'Motif',
-                                      'KINASE_ID', 'source', 'confidence'])
+                                      'KINASE', 'KINASE_ID', 'source',
+                                      'confidence'])
     return df_output
 
 
@@ -397,3 +406,54 @@ def get_fc(df_input, samples, base_sample):
     df = df_input[samples].div(df_input[base_sample], axis=0)
     df = df.apply(np.log2)
     return df
+
+
+
+def split_sites2(df, diff=None):
+    """ refortm input dataframe by splitting phosphosite identifier (name_pos)
+    to seperate columns for amino acid and position, retrieve necessary
+     metadata for subsequent annotation with upstream kinases
+    
+    Parameter
+    ---------
+    df: pandas dataframe
+        phosphoproteomics dataset with rows as features and samples as columns
+    diff: str
+       name of sample for which fold change is to be calculates
+
+    Return
+    ------
+    df_clean: pandas dataframe
+         dataframe that contains only metadata for all phosphosites
+    """
+    df = rename_columns(df)
+    names, motifs, sites, type, fc = [], [], [], [], []
+    for index in range(len(df)):
+        motif = df.Motif.iloc[index][1:-1]
+        motif_list = motif.split(';')
+        site = str(df.Site_Position.iloc[index])
+        site_list = site.split(';')
+        # uids += [df.Uniprot_Id.iloc[index]] * len(motif_list)
+        names += [df.Gene_Symbol.iloc[index]] * len(motif_list)
+        type += [df.Origin.iloc[index][0]] * len(motif_list)
+        motifs += motif_list
+        sites += site_list
+        # mx_score = str(df['Max_Score'].iloc[index]).split(';')
+        # mx += mx_score
+        if diff is not None:
+            fc += [df[diff].iloc[index]] * len(motif_list)
+    # try:
+    #     uids = [id.split('|')[1] for id in uids]
+    # except IndexError:
+    #     pass
+    sites = ['%s%s' % (m[6], s) for m, s in zip(motifs, sites)]
+    if diff is None:
+        df_clean = pd.DataFrame(zip(names, motifs, sites, type),
+                                columns=('Gene_Symbol',
+                                         'Motif', 'Site', 'type'))
+    else:
+        df_clean = pd.DataFrame(zip(names, motifs, sites, type, fc),
+                                columns=('Gene_Symbol', 'Motif',
+                                         'Site', 'type', 'fc'))
+
+    return df_clean
