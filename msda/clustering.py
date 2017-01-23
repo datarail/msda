@@ -9,6 +9,7 @@ from itertools import combinations
 from msda import adjustText
 from collections import OrderedDict
 import matplotlib.cm as cm
+from collections import Counter
 
 def normalize_min_max(df):
     df = df.copy()
@@ -40,8 +41,11 @@ def hierarchical_clustering(df, samples, plot_name='hc_plot.png',
 
 def pca(df, meta_df, num_components=2, label=None, plot_prefix='pca_plot_'):
     df = df.copy()
-    samples = meta_df.Sample.tolist()
-    assert set(samples) < df.columns.tolist(), "sample names mismatched"
+    samples = number_duplicates(meta_df.Sample.tolist())
+    samples2 = number_duplicates(df.columns.tolist())
+    meta_df.Sample = samples
+    df.columns = samples2
+    assert set(df.columns.tolist()) <= set(samples), "sample names mismatched"
     df = df.transpose()
     df = df.ix[samples]
     X = df.values
@@ -72,10 +76,9 @@ def plot_pca(X_pca, explained_variance, samples,
         for lab, col in labels.iteritems():
             plt.scatter(Xs_pca[y == lab, 0], Xs_pca[y == lab, 1],
                         label=lab, color=col)
-    # texts = []        
+    # texts = []
     for sample, pc1, pc2 in zip(samples, Xs_pca[:, 0], Xs_pca[:, 1]):
-        plt.annotate(sample,
-                     xy=(pc1, pc2), xytext=(-3, 3), size=5,
+        plt.annotate(sample, xy=(pc1, pc2), xytext=(-3, 3), size=5,
                      textcoords='offset points', ha='right', va='bottom')
 #        texts.append(plt.text(pc1, pc2, sample,
 #                              bbox={'pad': 0, 'alpha': 0}, size=7))
@@ -184,6 +187,15 @@ def diff_exp(df, samples, figname, top=25):
     plt.tight_layout()
     plt.savefig(figname)
     plt.clf()
+
+
+def number_duplicates(samples):
+    counts = Counter(samples)
+    for s, num in counts.items():
+        if num > 1:
+            for suffix in range(1, num+1):
+                samples[samples.index(s)] = s + str(suffix)
+    return samples
 
 
 cell_line_response = {'A549': 'partial', 'Colo205': 'partial',
