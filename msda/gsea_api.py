@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from pylab import *
 import seaborn as sns
+import os
 
 
 def get_gsea_enrichment(input_file, library, out_folder=None, out_file=None):
@@ -22,18 +23,22 @@ def get_gsea_enrichment(input_file, library, out_folder=None, out_file=None):
     if out_file:
         arg_list += ['-rpt_label', out_file]
     subprocess.call(arg_list)
+    terminal_folder = os.listdir(path)[0]
+    timestamp = terminal_folder.split('.')[1]
+    terminal_path = "%s/%s" % (path, terminal_folder)
 
-
-def plot_nes(path, id, num=20, filter=False, outfile=None):
-    file1 = '%s/gsea_report_for_na_neg_%s.xls' % (path, id)
-    file2 = '%s/gsea_report_for_na_pos_%s.xls' % (path, id)
+    file1 = '%s/gsea_report_for_na_neg_%s.xls' % (terminal_path, timestamp)
+    file2 = '%s/gsea_report_for_na_pos_%s.xls' % (terminal_path, timestamp)
     try:
-        df1 = pd.read_table(file1).iloc[:num]
-        df2 = pd.read_table(file2).iloc[:num]
-
+        df1 = pd.read_table(file1)
+        df2 = pd.read_table(file2)
     except IOError:
         pass
     df = pd.concat([df1, df2])
+    return df
+
+
+def plot_nes(df, filter=False, outfile=None):
     if filter is True:
         df = df[(df['NOM p-val'] <= 0.05) & (df['FDR q-val'] <= 0.25)]
     # names = df.NAME.tolist()
@@ -69,5 +74,16 @@ def plot_nes(path, id, num=20, filter=False, outfile=None):
     # xlabel('NES')
     # plt.savefig('nes1.png', dpi=600)
     # plt.clf()
-   
+
+
+def make_rnkfile(df, sample1, sample2):
+    df2 = df.copy()
+    df2[sample1] = df2[sample1].div(df2[sample2])
+    df2[sample1] = df2[sample1].apply(np.log2)
+    df2 = df2.sort([sample1])
+    df2 = df2[['Gene_Symbol', sample1]]
+    df2 = df2.replace([-np.inf, np.inf], np.nan)
+    df2 = df2.dropna()
+    return df2
+
 
