@@ -39,7 +39,7 @@ def hierarchical_clustering(df, samples, plot_name='hc_plot.png',
     plt.clf()
 
 
-def pca(df, meta_df, num_components=2, label=None, plot_prefix='pca_plot_'):
+def pca(df, meta_df, num_components=2, label=None, plot_prefix=None):
     df = df.copy()
     samples = number_duplicates(meta_df.Sample.tolist())
     samples2 = number_duplicates(df.columns.tolist())
@@ -59,14 +59,17 @@ def pca(df, meta_df, num_components=2, label=None, plot_prefix='pca_plot_'):
     X_pca = pca.fit_transform(X)
     explained_variance = pca.explained_variance_ratio_
     for pcs in list(combinations(range(num_components), r=2)):
-        plot_name = '%s%d_%d.png' % (plot_prefix, pcs[0]+1, pcs[1]+1)
+        if plot_prefix:
+            plot_name = '%s%d_%d.png' % (plot_prefix, pcs[0]+1, pcs[1]+1)
+        else:
+            plot_name = None
         plot_pca(X_pca, explained_variance, samples, pcs, plot_name,
                  y, color_map)
     return X_pca, explained_variance
 
 
 def plot_pca(X_pca, explained_variance, samples,
-             pcs=[0, 1], plot_name='pca_plot_12.png', y=None, labels=None):
+             pcs=[0, 1], plot_name=None, y=None, labels=None):
     Xs_pca = np.zeros([X_pca.shape[0], 2])
     Xs_pca[:, 0] = X_pca[:, pcs[0]]
     Xs_pca[:, 1] = X_pca[:, pcs[1]]
@@ -94,8 +97,12 @@ def plot_pca(X_pca, explained_variance, samples,
     plt.yticks([])
     plt.legend(fontsize=10, loc='lower left')
     # plt.tight_layout()
-    plt.savefig(plot_name, dpi=600)
-    plt.clf()
+    if plot_name:
+        plt.savefig(plot_name, dpi=600)
+        plt.clf()
+    else:
+        plt.show()
+        plt.clf()
 
 
 def generate_map(meta_df, label):
