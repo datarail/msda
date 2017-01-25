@@ -54,18 +54,28 @@ def pd_import(file, sample_list=[]):
                    intersection(df_map.Secondary_ID.tolist()))
 
     # Replace secondary accesion numbers with primary ID's
+    update_uids = []
     for i, pid in enumerate(df.Uniprot_Id):
         if pid in sec_ids:
-            df.Uniprot_Id.iloc[i] = get_primary_ids(pid)
+            update_uids.append(get_primary_ids(pid))
+        else:
+            update_uids.append(pid)
+    df.Uniprot_id = update_uids
 
     # Fix datetime entries in Gene names
+    update_symbols = []
     for i, gs in enumerate(df.Gene_Symbol):
         if isinstance(gs, pd.datetime):
-            df.Gene_Symbol.ix[i] = uid2gn(df.Uniprot_Id.ix[i])
+            update_symbols.append(uid2gn(df.Uniprot_Id.ix[i]))
+        elif type(gs) == float:
+            update_symbols.append(uid2gn(df.Uniprot_Id.ix[i]))
+        else:
+            update_symbols.append(gs)
+    df.Gene_Symbol = update_symbols
 
-    for i, gs in enumerate(df.Gene_Symbol):
-        if type(gs) == float:
-            df.Gene_Symbol.ix[i] = uid2gn(df.Uniprot_Id.ix[i])
+#    for i, gs in enumerate(df.Gene_Symbol):
+#        if type(gs) == float:
+#            df.Gene_Symbol.ix[i] = uid2gn(df.Uniprot_Id.ix[i])
 
     # Remove deleted uniprot ids
     df = df[~df.Uniprot_Id.isin(delac_tr)]
