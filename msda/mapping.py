@@ -19,6 +19,7 @@ def ensp2uid(ensp_id):
 
 
 def uid2gn(uid):
+    uid = uid.split('-')[0]
     url = "http://www.uniprot.org/uniprot/%s.fasta" % uid
 
     r = requests.get(url)
