@@ -24,7 +24,7 @@ def get_gsea_enrichment(input_file, library, out_folder=None, out_file=None):
         arg_list += ['-rpt_label', out_file]
     subprocess.call(arg_list)
     terminal_folder = os.listdir(path)[0]
-    timestamp = terminal_folder.split('.')[1]
+    timestamp = terminal_folder.split('.')[2]
     terminal_path = "%s/%s" % (path, terminal_folder)
 
     file1 = '%s/gsea_report_for_na_neg_%s.xls' % (terminal_path, timestamp)
