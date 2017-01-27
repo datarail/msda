@@ -6,7 +6,7 @@ In the first example below, a TMT-labeled mass spec dataset is merged with user-
 ```python
 import pandas as pd
 from msda import preprocessing
-meta_df = pd.read_csv(metadata_file.csv)
+meta_df = pd.read_csv('metadata_file.csv')
 df = preprocessing.pd_import(data_file, meta_df)
 ```
 If the experiment samples are split across two or more 10-plex experiments and a bridge sample is present in each 10-plex, then the datasets can be normalized based on the bridge sample and merged into a single dataset before subsequent analysis
@@ -16,12 +16,12 @@ df = preprocssing.pd_import([data_file1, data_file2], meta_df)
 The next example shows how principal component analysis or hierarchichal clustering of the dataset can be done. 
 ``` python
 from msda import clustering
-clustering.pca(df, meta_df, num_components=2, label=None, output_file='figure.png')
+clustering.pca(df, meta_df, num_components=2, label=None, plot_prefix='pca_')
 clustering.hierarchical_clustering(df, output_file='figure.png')
 ```
 If the metadata file contains additional columns with categorical information about the samples, then the PCA plots can also depict the categories using different colors. In order to do so, simply pass the name of the column in the metadata file to the argument 'label'.
 ``` python
-clustering.pca(df, meta_df, num_components=2, label='tumor_subtype', output_file)
+clustering.pca(df, meta_df, num_components=2, label='tumor_subtype', plot_prefix='pca_')
 ```
 
 Mass-spec based proteomics measurements provide relative intensity measurements for each protein i.e intensities for a given protein can be compared between samples, but intensities between proteins cannot be comapred. Intensity based absolute quantifcation (iBAQ) is a  normaliation methods that enables comparison across proteins. The example below show how to map the dataset onto iBAQ space.
