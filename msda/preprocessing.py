@@ -175,4 +175,7 @@ def merge_batches(filelist, meta_df):
         dfb_list.append(bn.normalize_per_protein(df, df_rank))
     # dfc_list = [rename_bridge(df, num+1) for num, df in enumerate(dfb_list)]
     df_merged = pd.concat(dfb_list, axis=1)
+    uids = df_merged.index.tolist()
+    gene_names = [uid2gn(id) for id in uids]
+    df_merged.insert(0, 'Gene_Symbol', gene_names)
     return df_merged
