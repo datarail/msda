@@ -25,11 +25,12 @@ signature <- (qnorm(signature$p.value/2, lower.tail=FALSE) * sign(signature$stat
 
 # nullmodel <- ttestNull(exSet, "Molecular_subtype", c("Basal", "Basal A", "Basal B"), "Luminal", per=1000, repos=TRUE, verbose=FALSE)
 
-nullmodel <- ttestNull(exSet, args[3], args[4], args[5], per=1000, repos=TRUE, verbose=FALSE)
+# nullmodel <- ttestNull(exSet, args[3], args[4], args[5], per=1000, repos=TRUE, verbose=FALSE)
 
 
-chris_regulon <- load('viper/regulon_symbol.rdata')
+# chris_regulon <- load('viper/regulon_symbol.rdata')
+brca_regulon <- load('viper/regulons/regul_symbol.rda')
 
-mrs <- msviper(signature, regulon1, nullmodel, verbose=FALSE)
+mrs <- msviper(signature, regul_symbol,  verbose=FALSE)
 result <- summary(mrs, mrs=length(mrs$es$nes))
 write.csv(result, args[6])
