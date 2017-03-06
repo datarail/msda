@@ -45,7 +45,7 @@ def split_sites(df, diff=None):
     """ refortm input dataframe by splitting phosphosite identifier (name_pos)
     to seperate columns for amino acid and position, retrieve necessary
      metadata for subsequent annotation with upstream kinases
-    
+
     Parameter
     ---------
     df: pandas dataframe
@@ -59,6 +59,13 @@ def split_sites(df, diff=None):
          dataframe that contains only metadata for all phosphosites
     """
     df = rename_columns(df)
+    origin = []
+    for id in range(len(df)):
+        if ';' in df.Motif.iloc[id]:
+            origin.append('Composite')
+        else:
+            origin.append('Single')
+    df['Origin'] = origin
     uids, names, motifs, sites, mx, type, fc = [], [], [], [], [], [], []
     for index in range(len(df)):
         motif = df.Motif.iloc[index]
