@@ -45,4 +45,12 @@ library = 'path to .gmt file'
 df_nes = gsea_tool.get_gsea_enrichment(rnk_filename, library, output_folder)
 gsea_tool.plot_nes(df_nes, filter=True, outfile='enrichment.png')
 ```
-
+VIPER is a tool that is developed by the Calefano Lab. It is used to infer Transcription factor activity based on differential activity of downstream targets. We wrote a wrapper that can take in RNA-seq/proteomics or phosphoproteomics datasets to infer TF or kinase activites respectively. VIPER can be run either in single sample ('ss') or multi-sample mode ('ms'). For multi-sample mode, the sample categories to be compared (test and ref) have to be provided in the function argument.
+```python
+from msda import run_viper as rv
+# single sample mode
+df_nes = rv.run_viper(df, meta_df, type='ss', outfile='path to output file') 
+# multi sample mode
+df_nes = rv.run_viper(df, meta_df, type='ms', label='tumor_subtype', 
+                      test='subtype A', ref='subtype B', outfile='path to output file') 
+```
