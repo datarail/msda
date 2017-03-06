@@ -6,6 +6,10 @@ import numpy as np
 
 
 def get_mutation_data(gene_list, cancer_subtypes):
+    """retrieve case-level data on mutations for given list 
+    of genes and cell lines
+    """
+    
     base_url = 'http://www.cbioportal.org/webservice.do'
 
     genes = ' '.join(gene_list)
@@ -33,6 +37,9 @@ def get_mutation_data(gene_list, cancer_subtypes):
 
 
 def get_case_lists(cancer_subtypes):
+    """ retrieve number of samples with mutations (missense, nonsense etc)
+    and copy number abberations in the given list of cancer subtypes
+    """
     base_url = 'http://www.cbioportal.org/webservice.do'
 
     subtypes = ' '.join(['%s_tcga' % c.lower()
