@@ -19,15 +19,16 @@ def get_pathsbetween(source_list, filter=False):
     return df
 
 
-def make_network_plot(weights_file, outfile, subsets=None):
+def make_network_plot(weights_file, network_file, figure_file, subsets=None):
     df = pd.read_csv(weights_file, sep='\t')
     source_list = df['0'].tolist()
     df = get_pathsbetween(source_list, filter=True)
+    df.to_csv(network_file, index=False)
     df2 = df[df.columns[:3]]
     if subsets:
         df2 = df2[df2.INTERACTION_TYPE.isin(subsets)]
     df2.to_csv('temp_pc_file.txt', sep='\t', index=False)
     subprocess.call(['Rscript', 'netcontext.R', '-n', 'temp_pc_file.txt',
-                     '-w',  weights_file, '-o', outfile])
+                     '-w',  weights_file, '-o', network_file])
     return df2
 
