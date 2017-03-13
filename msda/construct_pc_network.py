@@ -4,6 +4,22 @@ import subprocess
 
 
 def get_pathsbetween(source_list, filter=False):
+    """ Pahway commons client that retuens interactinos between
+    genes in extended binary SIF format
+
+    Parameters
+    ----------
+    source_list: list
+             list of gene names
+    filter: Boolean variable
+           Set to TRUE to filter only those interactions that have the
+    query genes as substrate and product
+
+    Returns
+    -------
+    df: dataframe
+        dataframe of interactions and supporting evidence
+    """
     base_url = 'http://www.pathwaycommons.org/pc2/graph'
     source_str = ','.join(source_list)
     params = {'source': source_str,
@@ -20,6 +36,24 @@ def get_pathsbetween(source_list, filter=False):
 
 
 def make_network_plot(weights_file, network_file, figure_file, subsets=None):
+    """ Plots pathway commons network
+    Parameters
+    ----------
+    weights_file: str
+           path to file that contains 2-columns (genes and weights)
+    network_file: str
+           path to which output dataframe has to be saved
+    figure_file: str
+           path to which network figure is to be saved
+    subsets: list
+           list of gene names
+
+    Return
+    ------
+    df2: dataframe
+         3-colum dataframe
+
+    """
     df = pd.read_csv(weights_file, sep='\t')
     source_list = df['0'].tolist()
     df = get_pathsbetween(source_list, filter=True)
@@ -31,4 +65,3 @@ def make_network_plot(weights_file, network_file, figure_file, subsets=None):
     subprocess.call(['Rscript', 'netcontext.R', '-n', 'temp_pc_file.txt',
                      '-w',  weights_file, '-o', network_file])
     return df2
-
