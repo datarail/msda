@@ -33,7 +33,8 @@ def pd_import(file, sample_list=[]):
         print file, "is not a supported filetype"
     df = df.rename(columns={'Protein_Id': 'Uniprot_Id',
                             'Protein Id': 'Uniprot_Id',
-                            'gene_symbol': 'Gene_Symbol'})
+                            'gene_symbol': 'Gene_Symbol',
+                            'Uniprot_ID': 'Uniprot_Id'})
     cols = [re.sub(" ", "_", str(i)) for i in df.columns]
 
     if sample_list:
@@ -135,14 +136,24 @@ def strip_metadata(df, samples):
     return df
 
 
-def rename_labels(df, meta_df):
+def rename_labels(df, meta_df, pMS=False):
     tmt_labels = meta_df.TMT_label.tolist()
     samples = meta_df.Sample.tolist()
-    df.index = df.Uniprot_Id.tolist()
+    if pMS:
+        df = make_pMS_identifier(df)
+        df.index = df['identifier'].tolist()
+    else:
+        df.index = df.Uniprot_Id.tolist()
     sample_key = {t: s for t, s in zip(tmt_labels, samples)}
     df = df.rename(columns=sample_key)
     df_samples = [s for s in df.columns.tolist() if s in samples]
-    df = df[df_samples]
+    if pMS:
+        metadata_cols = ['Uniprot_Id', 'Gene_Symbol', 'Motif',
+                         'Site_Position', 'Max_Score']
+        cols = metadata_cols + df_samples
+    else:
+        cols = ['Gene_Symbol'] + df_samples
+    df = df[cols]
     df = df.loc[:, ~df.columns.duplicated()]
     return df, df_samples
 
@@ -154,12 +165,13 @@ def rename_bridge(df, batch_num):
     return df
 
 
-def merge_batches(filelist, meta_df):
+def merge_batches(filelist, meta_df, pMS=False):
     df_list = []
     for file in filelist:
         df = pd_import(file)
-        df = df.drop_duplicates(['Uniprot_Id'])
-        df, samples = rename_labels(df, meta_df)
+        if not pMS:
+            df = df.drop_duplicates(['Uniprot_Id'])
+        df, samples = rename_labels(df, meta_df, pMS)
         # df.index = df.Uniprot_Id.tolist()
         # df = strip_metadata(df, samples)
         df_list.append(df)
@@ -168,14 +180,40 @@ def merge_batches(filelist, meta_df):
     df_ref = df_rank[0]
     dfA_list = []
     for df in df_list:
-        dfA_list.append(bn.normalize_mix(df, df_ref))
+        samples = [s for s in df.columns.tolist()
+                   if s in meta_df.Sample.tolist()]                 
+        dfA_list.append(bn.normalize_mix(df, df_ref, samples))
     df_rank = rank_batch_overlap(dfA_list)
     dfb_list = []
     for df in dfA_list:
-        dfb_list.append(bn.normalize_per_protein(df, df_rank))
+        samples = [s for s in df.columns.tolist()
+                   if s in meta_df.Sample.tolist()]                 
+        dfb_list.append(bn.normalize_per_protein(df, df_rank, samples))
     # dfc_list = [rename_bridge(df, num+1) for num, df in enumerate(dfb_list)]
     df_merged = pd.concat(dfb_list, axis=1)
-    uids = df_merged.index.tolist()
-    gene_names = [uid2gn(id) for id in uids]
-    df_merged.insert(0, 'Gene_Symbol', gene_names)
+    df_merged = df_merged.groupby(level=0, axis=1).apply(
+        lambda x: x.apply(combine_duplicates, axis=1))
+    # uids = df_merged.index.tolist()
+    # gene_names = [uid2gn(id) for id in uids]
+    # df_merged.insert(0, 'Gene_Symbol', gene_names)
     return df_merged
+
+
+def make_pMS_identifier(df):
+    identifier = []
+    for id in range(len(df)):
+        motif = df.Motif.iloc[id].split(';')
+        sites = df.Site_Position.iloc[id].split(';')
+        gene = df.Gene_Symbol.iloc[id]
+        ms = '_'.join(["%s%s" % (m[6], s) for m, s in zip(motif, sites)])
+        identifier.append("%s_%s" % (gene, ms))
+    df['identifier'] = identifier
+    df2 = df.copy()
+    samples = [s for s in df2.columns.tolist() if 'sum' in s]
+    df2['max_int'] = df2[samples].sum(axis=1)
+    df2 = df2.sort_values('max_int').drop_duplicates(['identifier'], take_last=True)
+    return df2
+
+
+ def combine_duplicates(x):
+     return ';'.join(set(x[x.notnull()].astype(str))) 
