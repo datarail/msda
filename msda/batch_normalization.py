@@ -64,21 +64,21 @@ def normalize_between_batches(df, df_ref, samples, control='Bridge'):
     return df_norm_inter
 
 
-def normalize_mix(df, df_ref, control='Bridge'):
+def normalize_mix(df, df_ref, samples, control='Bridge'):
 
     df_norm_mix = df.copy()
     ref_control = [s for s in df_ref.columns.tolist() if control in s][0]
     # true_samples = samples[:]
     # true_samples.remove(control)
     refset_bridge_mean = float(df_ref.loc[:, ref_control].sum())
-    for sample in df.columns.tolist():
+    for sample in samples:
         sample_mean = float(df_norm_mix.loc[:, sample].sum())
         nrm = refset_bridge_mean / sample_mean
         df_norm_mix.loc[:, sample] = nrm * df_norm_mix.loc[:, sample]
     return df_norm_mix
 
 
-def normalize_per_protein(df, df_refs, control='Bridge'):
+def normalize_per_protein(df, df_refs, samples, control='Bridge'):
     df_pr = df.copy()
     # true_samples = samples[:]
     # true_samples.remove(control)
@@ -103,7 +103,7 @@ def normalize_per_protein(df, df_refs, control='Bridge'):
             nrm = protein_in_refset / protein_in_set
         # index = df_pr[df_pr.Uniprot_Id == protein].index.values[0]
         #  print protein, protein_in_set, protein_in_refset
-        df_pr.loc[protein, :] = nrm * df_pr.loc[protein, :]
+        df_pr.loc[protein, samples] = nrm * df_pr.loc[protein, samples]
     return df_pr
 
 
