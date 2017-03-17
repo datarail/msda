@@ -182,11 +182,14 @@ def compute_ibaq_1sample(df, organism='human'):
        proteomics dataset normalized by IBAQ
 
     """
-    ref_file = '../resouces/%s_proteome_mw_peptides.csv' % organism
+    ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
     df_ref = pd.read_csv(ref_file)
     num_theor_peptides, ibaq_list, log10_ibaq = [], [], []
-    for protein in df['Protein Id'].tolist():
-        uid = protein.strip().split('|')[1]
+    for protein in df['Uniprot_Id'].tolist():
+        try:
+            uid = protein.strip().split('|')[1]
+        except IndexError:
+            uid = protein
         num_theor_peptides.append(df_ref[
             df_ref.UniprotID == uid].num_theoretical_peptides.values[0])
     df['num_theoretical_peptides'] = num_theor_peptides
@@ -253,24 +256,30 @@ def ups2_regression(ups2_ibaq, ups2_conc):
     Parameters:
     ----------
     ups2_ibaq: list of floats
-       list of ibaq values for UPS2 standards
+       list of log10 ibaq values for UPS2 standards
     ups2_ibaq: list of floats
-       list of known concentrations for UPS2 standards
+       list of known concentrations (log10) for UPS2 standards
 
     Return:
     regr: tuple
       tuple of slope and intercept values
     
     """
+    ups2_ibaq = np.array(ups2_ibaq).reshape(len(ups2_ibaq), 1)
+    ups2_conc = np.array(ups2_conc)
     regr = LinearRegression()
     regr.fit(ups2_ibaq, ups2_conc)
-    # plt.scatter(ups2_ibaq, ups2_conc)
-    # m = regr.coef_[0][0]
-    # c = regr.intercept_[0]
-    # reg_line = [m * x + c for x in ups2_ibaq]
-    # plt.plot(ups2_ibaq, reg_line)
-    # plt.show()
-    return regr
+    m = regr.coef_[0]
+    c = regr.intercept_
+    plt.scatter(ups2_ibaq, ups2_conc)
+    reg_line = [m * x + c for x in ups2_ibaq]
+    plt.plot(ups2_ibaq, reg_line)
+    plt.xlabel('log10 iBAQ')
+    plt.ylabel('log10 Conc (fmol)')
+    plt.annotate('slope=%.2f, intercept=%.2f' % (m, c),
+                 xy=(7, 0))
+    plt.show()
+    return (m, c)
 
 
 def bootstrap_regression(ups2_ibaq, ups2_conc):
@@ -287,6 +296,8 @@ def bootstrap_regression(ups2_ibaq, ups2_conc):
     regr_list: list of tuples
        list of slope and intercept tuples for all run of the boostrap
      """
+    ups2_ibaq = np.array(ups2_ibaq).reshape(len(ups2_ibaq), 1)
+    ups2_conc = np.array(ups2_conc)
     n_samples = len(ups2_conc)
     N = 10000
     n_dups = N / n_samples
