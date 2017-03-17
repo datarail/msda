@@ -70,6 +70,8 @@ def pd_import(file, sample_list=[]):
             update_symbols.append(uid2gn(df.Uniprot_Id.ix[i]))
         elif type(gs) == float:
             update_symbols.append(uid2gn(df.Uniprot_Id.ix[i]))
+        elif ':' in gs:
+            update_symbols.append(uid2gn(df.Uniprot_Id.ix[i]))
         else:
             update_symbols.append(gs)
     df.Gene_Symbol = update_symbols
