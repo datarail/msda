@@ -202,6 +202,7 @@ def generate_substrate_fasta(df):
 
     substrate_fasta = []
     ids, aa, pos = [], [], []
+    obsolete_entries = []
     for ind, substrate in enumerate(df.Uniprot_Id.tolist()):
         r = requests.get('http://www.uniprot.org/uniprot/%s.fasta' %
                          substrate)
@@ -219,8 +220,12 @@ def generate_substrate_fasta(df):
             aa.append(site[0])
             pos.append(site[1:])
         except AttributeError:
-            print substrate
+            osbolete_entries.append(substrate)
     df2 = pd.DataFrame(zip(ids, pos, aa))
+    if obsolete_entries:
+        with open('resources/obsolete_entries.txt', 'ab') as f:
+            for s in list(set(obsolete_entries)):
+                f.write("%s\n" % s)
     return substrate_fasta, df2
 
 
