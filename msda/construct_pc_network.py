@@ -63,5 +63,5 @@ def make_network_plot(weights_file, network_file, figure_file, subsets=None):
         df2 = df2[df2.INTERACTION_TYPE.isin(subsets)]
     df2.to_csv('temp_pc_file.txt', sep='\t', index=False)
     subprocess.call(['Rscript', 'netcontext.R', '-n', 'temp_pc_file.txt',
-                     '-w',  weights_file, '-o', network_file])
+                     '-w',  weights_file, '-o', figure_file])
     return df2
