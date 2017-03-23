@@ -148,7 +148,7 @@ def generate_report(file):
     lines = open(file).readlines()
     uids, length, mw, obs_pep, obs_pep2 = [], [], [], [], []
     for pr in range(0, len(lines), 2):
-        if not lines[pr].startswith('>##'):
+        if (not lines[pr].startswith('>##')) & ('contaminant' not in lines[pr]):
             pr_id = lines[pr]
             pr_seq = lines[pr+1].strip('\r\n')
             uids.append(get_id(pr_id))
