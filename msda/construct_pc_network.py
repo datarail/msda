@@ -76,7 +76,7 @@ def make_network_plot(weights_file, network_file, figure_file, subsets=None):
 
 def make_cytoscpe_plot(df_sif, weights_file):
     # Step 0
-    --------
+    # --------
     # Open Cytoscape v3.4
     # open http://localhost:1234/v1 in browser
     # useful documentation
