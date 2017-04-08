@@ -6,16 +6,16 @@ import numpy as np
 import pandas as pd
 from pylab import *
 import seaborn as sns
-import os
 
 
 def get_gsea_enrichment(input_file, library, out_folder=None, out_file=None):
-    path = "gsea_output/%s" % out_folder
+    path = out_folder
     os.makedirs(path)
     lib = '%s.gmt' % library
-    arg_list = ['java', '-cp', 'jars/gsea2-2.2.3.jar',
+    msda_path = os.path.dirname(os.path.abspath(__file__))
+    arg_list = ['java', '-cp', os.path.join(msda_path, 'jars/gsea2-2.2.3.jar'),
                 '-Xmx1024m',  'xtools.gsea.GseaPreranked',
-                '-param_file', 'gsea_parameters.txt',
+                '-param_file', os.path.join(msda_path, 'gsea_parameters.txt'),
                 '-rnk', input_file,
                 '-gmx', lib]
     if out_folder:
@@ -51,7 +51,7 @@ def make_rnkfile(df, sample1, sample2):
 
 
 def plot_nes(df, filter=False, top=10, outfile=None,
-              fontsize=12, show_pval=False):
+             fontsize=12, show_pval=False):
     sns.set_style('dark')
     font = {'family': 'sans-serif',
             'color':  'black',
@@ -87,7 +87,7 @@ def plot_nes(df, filter=False, top=10, outfile=None,
         pvals1 = ["%.2f" % p if p > 0 else "%.1f" % p
                   for p in df1['NOM p-val'].tolist()]
         pvals2 = ["%.2f" % p if p > 0 else "%.1f" % p
-                  for p in df2['NOM p-val'].tolist()] 
+                  for p in df2['NOM p-val'].tolist()]
         for x_pos, y_pos, pval in zip(df1.NES.tolist(), range(ylen),
                                       pvals1):
             axes[1].text(x_pos+0.1, y_pos, pval)
@@ -102,5 +102,3 @@ def plot_nes(df, filter=False, top=10, outfile=None,
     else:
         plt.savefig(outfile)
         plt.clf()
-        
-

@@ -6,7 +6,7 @@ import batch_normalization as bn
 import os
 
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
-df_map = pd.read_csv('%s/Uniprot_sec_to_prim.csv' % resource_path, sep='\t')
+df_map = pd.read_csv(os.path.join(resource_path, 'Uniprot_sec_to_prim.csv'), sep='\t')
 
 delac_tr = ['C9JYP6', 'Q7Z469']
 
