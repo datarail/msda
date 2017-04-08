@@ -3,8 +3,10 @@ import re
 from mapping import uid2gn
 import numpy as np
 import batch_normalization as bn
+import os
 
-df_map = pd.read_csv('resources/Uniprot_sec_to_prim.csv', sep='\t')
+resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
+df_map = pd.read_csv('%s/Uniprot_sec_to_prim.csv' % resource_path, sep='\t')
 
 delac_tr = ['C9JYP6', 'Q7Z469']
 
@@ -76,10 +78,6 @@ def pd_import(file, sample_list=[]):
             update_symbols.append(gs)
     df.Gene_Symbol = update_symbols
 
-#    for i, gs in enumerate(df.Gene_Symbol):
-#        if type(gs) == float:
-#            df.Gene_Symbol.ix[i] = uid2gn(df.Uniprot_Id.ix[i])
-
     # Remove deleted uniprot ids
     df = df[~df.Uniprot_Id.isin(delac_tr)]
 
@@ -95,13 +93,13 @@ def get_primary_ids(secondary_id):
     return primary_id
 
 
-def noise_filter(df):
+def noise_filter(df, rep_suffix='rep'):
     diffcut = 1
     filtered_index = []
     for ind in df.index.tolist():
-        x1 = df.loc[ind, df.columns.to_series().str.contains('r1').
+        x1 = df.loc[ind, df.columns.to_series().str.contains('%s1' % rep_suffix).
                     tolist()].values.tolist()
-        x2 = df.loc[ind, df.columns.to_series().str.contains('r2').
+        x2 = df.loc[ind, df.columns.to_series().str.contains('%s2' % rep_suffix).
                     tolist()].values.tolist()
         meandelta = np.mean(np.abs([a-b for a, b in zip(x1, x2)]))
         meanval = [(a+b)/2.0 for a, b in zip(x1, x2)]
@@ -125,7 +123,7 @@ def rank_batch_overlap(dfs):
     for b in batches:
         overlap_score.append(df[b].sum() - df[b].loc[b])
     df['overlap'] = overlap_score
-    df = df.sort('overlap', ascending=False)
+    df = df.sort_values('overlap', ascending=False)
     rank = [int(d.split('_')[1]) for d in df.index.tolist()]
     df_rank = [x for y, x in sorted(zip(rank, dfs))]
     return df_rank
@@ -206,16 +204,20 @@ def make_pMS_identifier(df):
     for id in range(len(df)):
         motif = df.Motif.iloc[id].split(';')
         sites = df.Site_Position.iloc[id].split(';')
-        gene = df.Gene_Symbol.iloc[id]
+        uid = df.Uniprot_Id.iloc[id]
         ms = '_'.join(["%s%s" % (m[6], s) for m, s in zip(motif, sites)])
-        identifier.append("%s_%s" % (gene, ms))
+        identifier.append("%s_%s" % (uid, ms))
     df['identifier'] = identifier
     df2 = df.copy()
     samples = [s for s in df2.columns.tolist() if 'sum' in s]
     df2['max_int'] = df2[samples].sum(axis=1)
-    df2 = df2.sort_values('max_int').drop_duplicates(['identifier'], take_last=True)
+    df2 = df2.sort_values('max_int').drop_duplicates(['identifier'], keep='last')
     return df2
 
 
- def combine_duplicates(x):
-     return ';'.join(set(x[x.notnull()].astype(str))) 
+def combine_duplicates(x):
+    return ';'.join(set(x[x.notnull()].astype(str)))
+
+
+
+ 
