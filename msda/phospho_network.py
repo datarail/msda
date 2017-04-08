@@ -5,16 +5,13 @@ import numpy as np
 import re
 import subprocess
 import mapping
+import os
 
-file = ('/Users/kartik/Dropbox (HMS-LSP)/BrCaLines_profiling/'
-        'RAWDATA/massspec/run2015/ReplicateA_pSTY_Summary_031315.xlsx')
-
-df_ptm = pd.read_table('resources/Regulatory_sites_appended.tsv',
+resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources') 
+df_ptm = pd.read_table(os.path.join(resource_path, 'Regulatory_sites_appended.tsv'),
                        error_bad_lines=False)
-df_kinase = pd.read_csv('resources/kinase_substrate_dataset_2016.csv')
-# df_networkin = pd.read_table('resources/networkin_human_predictions.tsv')
-df_networkin = pd.read_csv('resources/networkin_human'
-                           '_predictions_appended.csv')
+df_kinase = pd.read_csv(os.path.join(resource_path, 'kinase_substrate_dataset_2016.csv'))
+df_networkin = pd.read_csv(os.path.join(resource_path, 'networkin_human_predictions_appended.csv'))
 
 
 def rename_columns(df):
@@ -220,10 +217,10 @@ def generate_substrate_fasta(df):
             aa.append(site[0])
             pos.append(site[1:])
         except AttributeError:
-            osbolete_entries.append(substrate)
+            obsolete_entries.append(substrate)
     df2 = pd.DataFrame(zip(ids, pos, aa))
     if obsolete_entries:
-        with open('resources/obsolete_entries.txt', 'ab') as f:
+        with open(os.path.join(resource_path, 'obsolete_entries.txt'), 'ab') as f:
             for s in list(set(obsolete_entries)):
                 f.write("%s\n" % s)
     return substrate_fasta, df2
@@ -271,9 +268,9 @@ def run_networkin(fasfile, psitefile, outfile):
     ------
     """
     f = open(outfile, 'wb')
-    subprocess.call(['resources/NetworKIN_release3.0/NetworKIN.py',
-                     '-n', 'resources/NetPhorest/netphorest',
-                     '-b', 'resources/blast-2.2.17/bin/blastall', '9606',
+    subprocess.call([os.path.join(resource_path, 'NetworKIN_release3.0/NetworKIN.py'),
+                     '-n', os.path.join(resource_path, 'NetPhorest/netphorest'),
+                     '-b', os.path.join(resource_path, 'blast-2.2.17/bin/blastall'), '9606',
                      fasfile, psitefile], stdout=f)
     return
 
