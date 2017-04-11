@@ -2,11 +2,14 @@ import requests
 import pandas as pd
 import subprocess
 import networkx as nx
+import webbrowser
+import subprocess
 from py2cytoscape.data.cynetwork import CyNetwork
 from py2cytoscape.data.cyrest_client import CyRestClient
 from py2cytoscape.data.style import StyleUtil
 import py2cytoscape.util.cytoscapejs as cyjs
 import py2cytoscape.cytoscapejs as renderer
+
 
 
 def get_pathsbetween(source_list, filter=False):
@@ -77,10 +80,13 @@ def make_cytoscpe_plot(df_sif, weights_file):
     # Step 0
     # --------
     # Open Cytoscape v3.4
-    # open http://localhost:1234/v1 in browser
-    # useful documentation
+
+    # Useful documentation
     # --------------------
     # http://nbviewer.jupyter.org/github/idekerlab/py2cytoscape/blob/develop/examples/New_wrapper_api_sample.ipynb
+    cytoscape_path = '/Applications/Cytoscape_v3.4.0/Cytoscape.app'
+    subprocess.call(['open', cytoscape_path])
+    webbrowser.open('http://localhost:1234/v1')
     G = nx.from_pandas_dataframe(df_sif, 'PARTICIPANT_A',
                                  'PARTICIPANT_B', ['INTERACTION_TYPE'])
     df_weights = pd.read_csv(weights_file, sep='\t')
