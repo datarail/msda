@@ -77,10 +77,16 @@ def make_network_plot(weights_file, network_file, figure_file, subsets=None):
 
 
 def make_cytoscpe_plot(df_sif, weights_file):
-    # Step 0
-    # --------
-    # Open Cytoscape v3.4
+    """ provide sif file and weights of nodes to launch and
+    generate directed cytoscape network
 
+    Parameters
+    ----------
+    df_sif: pandas dataframe
+         sif file (can contain additional metadata on edge annotations)
+    weights_file: string
+        path to 2-column file of node weights
+    """
     # Useful documentation
     # --------------------
     # http://nbviewer.jupyter.org/github/idekerlab/py2cytoscape/blob/develop/examples/New_wrapper_api_sample.ipynb
