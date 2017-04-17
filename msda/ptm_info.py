@@ -1,15 +1,22 @@
 import pandas as pd
 import requests
 import numpy as np
+import os
 
-df_psite = pd.read_table('resources/phosphosite_dataset_appended.tsv')
+resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             'resources')
+df_psite = pd.read_table(os.path.join(resource_path,
+                                      'phosphosite_dataset_appended.tsv'))
 
-df_ptm = pd.read_table('resources/Regulatory_sites_appended.tsv',
+df_ptm = pd.read_table(os.path.join(resource_path,
+                                    'Regulatory_sites_appended.tsv'),
                        error_bad_lines=False)
 df_ptm = df_ptm.replace(np.nan, 'nan', regex=True)
 #df_ptm = pd.read_csv('resources/ptm_mapping.csv')
-df_map = pd.read_csv('resources/Uniprot_sec_to_prim.csv', sep='\t')
-df_kinase = pd.read_csv('resources/kinase_substrate_dataset.csv')
+df_map = pd.read_csv(os.path.join(resource_path,
+                                  'Uniprot_sec_to_prim.csv'), sep='\t')
+df_kinase = pd.read_csv(os.path.join(resource_path,
+                                     'kinase_substrate_dataset_2016.csv'))
 
 
 # def get_regulatory_info(uid, msite, mod, organism):
@@ -265,19 +272,24 @@ def get_true_site(uid, motif):
     uniprot fasta file 
     """
     seq = get_seq(uid)
-    if motif.startswith('_'):
-        motif = motif.strip().split('_')[-1].upper()
-        diff = 15 - len(motif)
-    elif motif.endswith('_'):
-        motif = motif.strip().split('_')[0].upper()
+    if '_' in motif:
+        hh = '_'
+    elif 'x' in motif:
+        hh = 'x'
+    aa_position = int(len(motif) / 2.0)
+    if motif.startswith(hh):
+        sub_motif = motif.strip().split(hh)[-1].upper()
+        diff = len(motif) - len(sub_motif)
+    elif motif.endswith(hh):
+        sub_motif = motif.strip().split(hh)[0].upper()
         diff = 0
     else:
-        motif = motif.upper()
+        sub_motif = motif.upper()
         diff = 0
     if seq != 'unknown':
-        start_ind = seq.find(motif)
-        true_site = start_ind + 8 - diff
-        true_site = "%s%d" % (motif[7 - diff], true_site)
+        start_ind = seq.find(sub_motif)
+        true_site = start_ind + round(len(motif) / 2.0) - diff
+        true_site = "%s%d" % (motif[aa_position - diff], true_site)
     elif seq == 'unknown':
         true_site = 'NA'
     return true_site
