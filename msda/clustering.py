@@ -10,6 +10,9 @@ from msda import adjustText
 from collections import OrderedDict
 import matplotlib.cm as cm
 from collections import Counter
+import seaborn as sns
+import pandas as pd
+
 
 def normalize_min_max(df):
     df = df.copy()
@@ -206,8 +209,44 @@ def number_duplicates(samples):
     return samples
 
 
-cell_line_response = {'A549': 'partial', 'Colo205': 'partial',
-                      'DU145': 'partial', 'H1703': 'sensitive',
-                      'HCT116': 'partial', 'HELA': 'partial',
-                      'HT29': 'resistant', 'OVCAR8': 'resistant',
-                      'SKBR3': 'resistant', 'SKOV3': 'resistant'}
+def plot_clustermap(df, output_path, cmap=None, legend_label='',
+                    z_score=None, xticklabels=False, yticklabels=True,
+                    colors_dict=None, col_colors=None, row_colors=None):
+    """ make clustermap figure
+
+    Parameter
+    ---------
+    df
+    df_meta
+    output_path
+
+    Return
+    ------
+    cg
+    """
+
+    cg = sns.clustermap(df, col_colors=col_colors, row_colors=None,
+                        cmap=cmap, z_score=z_score,
+                        yticklabels=yticklabels, xticklabels=xticklabels)
+
+    if colors_dict:
+        for cat in colors_dict.keys():
+            for label in colors_dict[cat]:
+                cg.ax_col_dendrogram.bar(0, 0, color=colors_dict[cat][label],
+                                         label=label, linewidth=0)
+        cg.ax_col_dendrogram.legend(loc=(-0.7, -2), ncol=1)
+
+    plt.subplots_adjust(top=1, bottom=0.02, left=0.3, right=0.8)
+    fig = plt.gcf()
+    fig.set_size_inches([10, 7.5])
+    cg.cax.set_position((.025, .1, 0.025, .15))
+    cg.cax.text(-0.3, -0.2, legend_label, fontsize=9)
+    plt.savefig(output_path, dpi=300)
+    return cg
+
+
+def construct_categorical_pal(df_meta, category):
+    categorical_pal = sns.color_palette("hls",
+                                        len(df_meta[category].unique()))
+    categorical_dict = dict(zip(df_meta[category].unique(), categorical_pal))
+    return categorical_dict
