@@ -7,11 +7,15 @@ import subprocess
 import mapping
 import os
 
-resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources') 
-df_ptm = pd.read_table(os.path.join(resource_path, 'Regulatory_sites_appended.tsv'),
+resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             'resources')
+df_ptm = pd.read_table(os.path.join(resource_path,
+                                    'Regulatory_sites_appended.tsv'),
                        error_bad_lines=False)
-df_kinase = pd.read_csv(os.path.join(resource_path, 'kinase_substrate_dataset_2016.csv'))
-df_networkin = pd.read_csv(os.path.join(resource_path, 'networkin_human_predictions_appended.csv'))
+df_kinase = pd.read_csv(os.path.join(resource_path,
+                                     'kinase_substrate_dataset_2016.csv'))
+df_networkin = pd.read_csv(os.path.join(
+    resource_path, 'networkin_human_predictions_appended.csv'))
 
 
 def rename_columns(df):
@@ -28,7 +32,6 @@ def rename_columns(df):
     df = df.rename(columns={'Protein Id': 'Uniprot_Id',
                             'proteinID': 'Uniprot_Id',
                             'Site Position': 'Site_Position',
-                            # 'siteIDstr': 'Site_Position',
                             'geneSymbol': 'Gene_Symbol',
                             'gene_symbol': 'Gene_Symbol',
                             'Gene Symbol': 'Gene_Symbol',
