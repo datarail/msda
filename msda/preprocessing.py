@@ -93,6 +93,25 @@ def get_primary_ids(secondary_id):
     return primary_id
 
 
+def split_scores(m):
+    try:
+        m1 = m.split(';')[1]
+    except IndexError:
+        m1 = np.nan
+    return float(m1)
+
+
+def filter_score(df):
+    df2 = df.copy()
+    m0 = [float(m.split(';')[0]) for m in df.Max_Score.tolist()]
+    m1 = [split_scores(m) for m in df.Max_Score.tolist()]
+    df2['m0'] = m0
+    df2['m1'] = m1
+    df3 = df2[(df2['m0'] > 13) | (df2['m1'] > 13)]
+    df = df.loc[df3.index.tolist()]
+    return df
+
+
 def noise_filter(df, rep_suffix='rep'):
     diffcut = 1
     filtered_index = []
