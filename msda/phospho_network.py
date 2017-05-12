@@ -41,66 +41,6 @@ def rename_columns(df):
     return df
 
 
-def split_sites(df, diff=None):
-    """ refortm input dataframe by splitting phosphosite identifier (name_pos)
-    to seperate columns for amino acid and position, retrieve necessary
-     metadata for subsequent annotation with upstream kinases
-
-    Parameter
-    ---------
-    df: pandas dataframe
-        phosphoproteomics dataset with rows as features and samples as columns
-    diff: str
-       name of sample for which fold change is to be calculates
-
-    Return
-    ------
-    df_clean: pandas dataframe
-         dataframe that contains only metadata for all phosphosites
-    """
-    df = rename_columns(df)
-    origin = []
-    for id in range(len(df)):
-        if ';' in df.Motif.iloc[id]:
-            origin.append('Composite')
-        else:
-            origin.append('Single')
-    df['Origin'] = origin
-    uids, names, motifs, sites, mx, type, fc = [], [], [], [], [], [], []
-    for index in range(len(df)):
-        motif = df.Motif.iloc[index]
-        motif_list = motif.split(';')
-        site = str(df.Site_Position.iloc[index])
-        site_list = site.split(';')
-        uids += [df.Uniprot_Id.iloc[index]] * len(motif_list)
-        names += [df.Gene_Symbol.iloc[index]] * len(motif_list)
-        try:
-            type += [df.Origin.iloc[index].split('_')[1][0]] * len(motif_list)
-        except IndexError:
-            type += [df.Origin.iloc[index][0]] * len(motif_list)
-        motifs += motif_list
-        sites += site_list
-        mx_score = str(df['Max_Score'].iloc[index]).split(';')
-        mx += mx_score
-        if diff is not None:
-            fc += [df[diff].iloc[index]] * len(motif_list)
-    try:
-        uids = [id.split('|')[1] for id in uids]
-    except IndexError:
-        pass
-    sites = ['%s%s' % (m[6], s) for m, s in zip(motifs, sites)]
-    if diff is None:
-        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx, type),
-                                columns=('Uniprot_Id', 'Gene_Symbol',
-                                         'Motif', 'Site', 'score', 'type'))
-    else:
-        df_clean = pd.DataFrame(zip(uids, names, motifs, sites, mx, type, fc),
-                                columns=('Uniprot_Id', 'Gene_Symbol',
-                                         'Motif', 'Site', 'score', 'type', 'fc'))
-
-    return df_clean
-
-
 def get_annotated_subset(df_input):
     """ splits dataframe into subsets based on whether the 
     phosphosites have upstream kinases
@@ -420,52 +360,36 @@ def get_fc(df_input, samples, base_sample):
     return df
 
 
+def series_split(df, col):
+    series = df[col].str.split(';').apply(pd.Series, 1).stack()
+    series.index = series.index.droplevel(-1) # to line up with df's index
+    series.name = col
+    return series
 
-def split_sites2(df, diff=None):
-    """ refortm input dataframe by splitting phosphosite identifier (name_pos)
-    to seperate columns for amino acid and position, retrieve necessary
-     metadata for subsequent annotation with upstream kinases
+def split_sites(df):
+
+    df = pn.rename_columns(df)
+    origin = []
+    for id in range(len(df)):
+        if ';' in df.Motif.iloc[id]:
+            origin.append('Composite')
+        else:
+            origin.append('Single')
+    df['Origin'] = origin
     
-    Parameter
-    ---------
-    df: pandas dataframe
-        phosphoproteomics dataset with rows as features and samples as columns
-    diff: str
-       name of sample for which fold change is to be calculates
+    motif = series_split(df, 'Motif')
+    max_score = series_split(df, 'Max_Score')
+    sp = series_split(df, 'Site_Position')
+    del df['Motif']
+    del df['Max_Score']
+    del df['Site_Position']
+    dfe = pd.DataFrame(zip(motif, max_score, sp), index=sp.index.tolist(),
+                       columns=[motif.name, max_score.name, sp.name])
+    df2 = df.join(dfe)
+    df2['Identifier'] = ["%s_%s%s_%s" % (gs, m[6], sp, o[0])
+                         for gs, m, sp, o in zip(df2.Gene_Symbol.tolist(),
+                                                  df2.Motif.tolist(),
+                                                  df2.Site_Position.tolist(),
+                                                  df2.Origin.tolist())]
+    return df2
 
-    Return
-    ------
-    df_clean: pandas dataframe
-         dataframe that contains only metadata for all phosphosites
-    """
-    df = rename_columns(df)
-    names, motifs, sites, type, fc = [], [], [], [], []
-    for index in range(len(df)):
-        motif = df.Motif.iloc[index][1:-1]
-        motif_list = motif.split(';')
-        site = str(df.Site_Position.iloc[index])
-        site_list = site.split(';')
-        # uids += [df.Uniprot_Id.iloc[index]] * len(motif_list)
-        names += [df.Gene_Symbol.iloc[index]] * len(motif_list)
-        type += [df.Origin.iloc[index][0]] * len(motif_list)
-        motifs += motif_list
-        sites += site_list
-        # mx_score = str(df['Max_Score'].iloc[index]).split(';')
-        # mx += mx_score
-        if diff is not None:
-            fc += [df[diff].iloc[index]] * len(motif_list)
-    # try:
-    #     uids = [id.split('|')[1] for id in uids]
-    # except IndexError:
-    #     pass
-    sites = ['%s%s' % (m[6], s) for m, s in zip(motifs, sites)]
-    if diff is None:
-        df_clean = pd.DataFrame(zip(names, motifs, sites, type),
-                                columns=('Gene_Symbol',
-                                         'Motif', 'Site', 'type'))
-    else:
-        df_clean = pd.DataFrame(zip(names, motifs, sites, type, fc),
-                                columns=('Gene_Symbol', 'Motif',
-                                         'Site', 'type', 'fc'))
-
-    return df_clean
