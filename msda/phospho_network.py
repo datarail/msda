@@ -368,7 +368,7 @@ def series_split(df, col):
 
 def split_sites(df):
 
-    df = pn.rename_columns(df)
+    df = rename_columns(df)
     origin = []
     for id in range(len(df)):
         if ';' in df.Motif.iloc[id]:
@@ -380,12 +380,16 @@ def split_sites(df):
     motif = series_split(df, 'Motif')
     max_score = series_split(df, 'Max_Score')
     sp = series_split(df, 'Site_Position')
+    
     del df['Motif']
     del df['Max_Score']
     del df['Site_Position']
     dfe = pd.DataFrame(zip(motif, max_score, sp), index=sp.index.tolist(),
                        columns=[motif.name, max_score.name, sp.name])
+    dfe['Site'] = ["%s%s" % (m[6], s) for m, s in zip(dfe.Motif.tolist(),
+                                                      dfe.Site_Position.tolist())]
     df2 = df.join(dfe)
+    df2['Uniprot_Id'] = [u.split('|')[1] for u in df2.Uniprot_Id.tolist()]
     df2['Identifier'] = ["%s_%s%s_%s" % (gs, m[6], sp, o[0])
                          for gs, m, sp, o in zip(df2.Gene_Symbol.tolist(),
                                                   df2.Motif.tolist(),
@@ -393,3 +397,35 @@ def split_sites(df):
                                                   df2.Origin.tolist())]
     return df2
 
+
+def construct_table(df_nt, df_clean):
+    col_rename = {'Target description': 'Gene_Symbol',
+                  'Position': 'Site',
+                  'Kinase/Phosphatase/Phospho-binding domain description': 'KINASE',
+                  'NetworKIN score': 'confidence',
+                  'Peptide sequence window': 'Motif'}
+    df_nt = df_nt.rename(columns=col_rename)
+    df_nt = df_nt[col_rename.values()]
+    df_nt['Source'] = ['NetworKIN'] * len(df_nt)
+    df_nt['Motif'] = [m.upper() for m in df_nt['Motif'].tolist()]
+    df_nt.index = ["%s_%s" % (g, s) for g,s in zip(df_nt.Gene_Symbol.tolist(),
+                                                   df_nt.Site.tolist())]
+    df_kinase['SITE_+/-7_AA'] = [m[1:-1].upper() for m in df_kinase['SITE_+/-7_AA'].tolist()] 
+    df_psp = df_kinase[df_kinase['SITE_+/-7_AA'].isin(df_clean.Motif.tolist())]
+    df_psp = df_psp.rename(columns={'SUBSTRATE': 'Gene_Symbol',
+                                    'SUB_MOD_RSD': 'Site',
+                                    'SITE_+/-7_AA': 'Motif'})
+    df_psp['confidence'] = [100] * len(df_psp)
+    df_psp = df_psp[col_rename.values()]
+    df_psp['Source'] = ['PSP'] * len(df_psp)
+    df_psp.index = ["%s_%s" % (g, s) for g,s in zip(df_psp.Gene_Symbol.tolist(),
+                                                    df_psp.Site.tolist())]
+    df_ks = pd.concat([df_nt, df_psp])
+    return df_ks
+    
+    
+    
+
+    
+    
+    
