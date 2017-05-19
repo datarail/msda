@@ -268,7 +268,7 @@ def split_sites(df):
     dfe['Site'] = ["%s%s" % (m[6], s) for m, s in zip(dfe.Motif.tolist(),
                                                       dfe.Site_Position.tolist())]
     df2 = df.join(dfe)
-    df2['Uniprot_Id'] = [u.split('|')[1] for u in df2.Uniprot_Id.tolist()]
+    #df2['Uniprot_Id'] = [u.split('|')[1] for u in df2.Uniprot_Id.tolist()]
     df2['Identifier'] = ["%s_%s%s_%s" % (gs, m[6], sp, o[0])
                          for gs, m, sp, o in zip(df2.Gene_Symbol.tolist(),
                                                   df2.Motif.tolist(),
