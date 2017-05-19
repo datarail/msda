@@ -60,7 +60,7 @@ def plot_nes(df, filter=False, top=10, outfile=None,
             }
     sns.despine()
     if filter is True:
-        df = df[(df['NOM p-val'] <= 0.05) & (df['FDR q-val'] <= 0.25)]
+        df = df[(df['NOM p-val'] <= 0.05) & (df['FDR q-val'] < 0.2)]
     df1 = df[df.NES > 0].iloc[:top, :]
     df2 = df[df.NES < 0].iloc[:top, :].sort_values(by='NES', ascending=False)
     ylen = np.max([len(df1), len(df2)])
