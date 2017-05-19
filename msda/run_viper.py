@@ -1,5 +1,6 @@
 import subprocess
 import os
+import pandas as pd
 
 
 def sum_duplicate_rows(df, identifier='Gene_Symbol',
@@ -20,7 +21,7 @@ def run_viper(df, type='ss', category=None, metafile=None,
     regulon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'viper/regulons/%s' % regulon)
     if type == 'ss':
         subprocess.call(['Rscript', '--vanilla', os.path.join(viper_path, 'viper.R'),
-                         'expr_temp.csv', metafile, outfile])
+                         'expr_temp.csv', identifier, regulon_path, outfile])
     elif type == 'ms':
         subprocess.call(['Rscript', '--vanilla', os.path.join(viper_path, 'msviper.R'),
                          'expr_temp.csv', metafile, category,
@@ -28,4 +29,6 @@ def run_viper(df, type='ss', category=None, metafile=None,
     elif type == 'fc':
         subprocess.call(['Rscript', '--vanilla', os.path.join(viper_path, 'fc_viper.R'),
                          'expr_temp.csv', regulon_path, outfile])
+    df_nes = pd.read_csv(outfile, index_col=0)
+    return df_nes
 
