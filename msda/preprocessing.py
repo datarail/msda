@@ -4,9 +4,12 @@ from mapping import uid2gn
 import numpy as np
 import batch_normalization as bn
 import os
+from msda import process_raw
 
-resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resources')
-df_map = pd.read_csv(os.path.join(resource_path, 'Uniprot_sec_to_prim.csv'), sep='\t')
+resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             'resources')
+df_map = pd.read_csv(os.path.join(resource_path, 'Uniprot_sec_to_prim.csv'),
+                     sep='\t')
 
 delac_tr = ['C9JYP6', 'Q7Z469']
 
@@ -116,10 +119,10 @@ def noise_filter(df, rep_suffix='rep'):
     diffcut = 1
     filtered_index = []
     for ind in df.index.tolist():
-        x1 = df.loc[ind, df.columns.to_series().str.contains('%s1' % rep_suffix).
-                    tolist()].values.tolist()
-        x2 = df.loc[ind, df.columns.to_series().str.contains('%s2' % rep_suffix).
-                    tolist()].values.tolist()
+        x1 = df.loc[ind, df.columns.to_series().str.contains(
+            '%s1' % rep_suffix).tolist()].values.tolist()
+        x2 = df.loc[ind, df.columns.to_series().str.contains(
+            '%s2' % rep_suffix).tolist()].values.tolist()
         meandelta = np.mean(np.abs([a-b for a, b in zip(x1, x2)]))
         meanval = [(a+b)/2.0 for a, b in zip(x1, x2)]
         maxdiff = np.max(meanval) - np.min(meanval)
@@ -184,37 +187,40 @@ def rename_bridge(df, batch_num):
     return df
 
 
-def merge_batches(filelist, meta_df, pMS=False):
+def merge_batches(filelist, meta_df, pMS=False, norm=False):
     df_list = []
     for file in filelist:
         df = pd_import(file)
         if not pMS:
             df = df.drop_duplicates(['Uniprot_Id'])
         df, samples = rename_labels(df, meta_df, pMS)
+        df_scaled = process_raw.scale(df, samples)
         # df.index = df.Uniprot_Id.tolist()
         # df = strip_metadata(df, samples)
-        df_list.append(df)
+        df_list.append(df_scaled)
 
-    df_rank = rank_batch_overlap(df_list)
-    df_ref = df_rank[0]
-    dfA_list = []
-    for df in df_list:
-        samples = [s for s in df.columns.tolist()
-                   if s in meta_df.Sample.tolist()]                 
-        dfA_list.append(bn.normalize_mix(df, df_ref, samples))
-    df_rank = rank_batch_overlap(dfA_list)
-    dfb_list = []
-    for df in dfA_list:
-        samples = [s for s in df.columns.tolist()
-                   if s in meta_df.Sample.tolist()]                 
-        dfb_list.append(bn.normalize_per_protein(df, df_rank, samples))
-    # dfc_list = [rename_bridge(df, num+1) for num, df in enumerate(dfb_list)]
-    df_merged = pd.concat(dfb_list, axis=1)
+    if norm:
+        df_rank = rank_batch_overlap(df_list)
+        df_ref = df_rank[0]
+        dfA_list = []
+        for df in df_list:
+            samples = [s for s in df.columns.tolist()
+                       if s in meta_df.Sample.tolist()]
+            dfA_list.append(bn.normalize_mix(df, df_ref, samples))
+        df_rank = rank_batch_overlap(dfA_list)
+        dfb_list = []
+        for df in dfA_list:
+            samples = [s for s in df.columns.tolist()
+                       if s in meta_df.Sample.tolist()]
+            dfb_list.append(bn.normalize_per_protein(df, df_rank, samples))
+        # dfc_list = [rename_bridge(df, num+1) for num, df
+        #                 in enumerate(dfb_list)]
+        df_merged = pd.concat(dfb_list, axis=1)
+    else:
+        df_merged = pd.concat(df_list, axis=1)
     df_merged = df_merged.groupby(level=0, axis=1).apply(
         lambda x: x.apply(combine_duplicates, axis=1))
-    # uids = df_merged.index.tolist()
-    # gene_names = [uid2gn(id) for id in uids]
-    # df_merged.insert(0, 'Gene_Symbol', gene_names)
+    df_merged = df_merged.convert_objects(convert_numeric=True)
     return df_merged
 
 
@@ -230,12 +236,21 @@ def make_pMS_identifier(df):
     df2 = df.copy()
     samples = [s for s in df2.columns.tolist() if 'sum' in s]
     df2['max_int'] = df2[samples].sum(axis=1)
-    df2 = df2.sort_values('max_int').drop_duplicates(['identifier'], keep='last')
+    df2 = df2.sort_values('max_int').drop_duplicates(['identifier'],
+                                                     keep='last')
     return df2
 
 
 def combine_duplicates(x):
     return ';'.join(set(x[x.notnull()].astype(str)))
+
+
+def quantile_normalize(df):
+    rank_mean = pd.DataFrame(np.sort(df.values, axis=0),
+                             index=range(1, len(df)+1),
+                             columns=df.columns).mean(axis=1)
+    df_quantile = df.rank(method='min').stack().astype(int).map(rank_mean).unstack()
+    return df_quantile
 
 
 
