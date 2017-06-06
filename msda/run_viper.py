@@ -25,7 +25,7 @@ def run_viper(df, type='ss', category=None, metafile=None,
     elif type == 'ms':
         subprocess.call(['Rscript', '--vanilla', os.path.join(viper_path, 'msviper.R'),
                          'expr_temp.csv', metafile, category,
-                         test, ref, outfile])
+                         test, ref, identifier, regulon_path, outfile])
     elif type == 'fc':
         subprocess.call(['Rscript', '--vanilla', os.path.join(viper_path, 'fc_viper.R'),
                          'expr_temp.csv', regulon_path, outfile])

@@ -3,7 +3,8 @@ library("viper")
 args <- commandArgs(trailingOnly=TRUE)
 
 exprsFile <- args[1]
-exprs <- as.matrix(read.table(exprsFile, header=TRUE, sep=',', row.names='Gene_Symbol', as.is=TRUE))
+identifier <- args[6]
+exprs <- as.matrix(read.table(exprsFile, header=TRUE, sep=',', row.names=identifier, as.is=TRUE))
 
 
 pDataFile <- args[2]
@@ -17,9 +18,9 @@ exSet <- ExpressionSet(assayData=exprs, phenoData=phenoData)
 
 exSet
 
-signature <- rowTtest(exSet, args[3] , args[4], args[5])
+#signature <- rowTtest(exSet, args[3] , args[4], args[5])
 
-# signature <- rowTtest(exSet, "Molecular_subtype", c("Basal", "Basal A", "Basal B"), "Luminal")
+signature <- rowTtest(exSet, "Molecular_subtype", c("Basal", "Basal A", "Basal B"), "Luminal")
 
 signature <- (qnorm(signature$p.value/2, lower.tail=FALSE) * sign(signature$statistic))[, 1]
 
@@ -29,8 +30,9 @@ signature <- (qnorm(signature$p.value/2, lower.tail=FALSE) * sign(signature$stat
 
 
 # chris_regulon <- load('viper/regulon_symbol.rdata')
-brca_regulon <- load('viper/regulons/regul_symbol.rda')
+# brca_regulon <- load('viper/regulons/regul_symbol.rda')
+regulon <- load(args[7])
 
-mrs <- msviper(signature, regul_symbol,  verbose=FALSE)
+mrs <- msviper(signature, get(regulon),  verbose=FALSE)
 result <- summary(mrs, mrs=length(mrs$es$nes))
-write.csv(result, args[6])
+write.csv(result, args[8])
