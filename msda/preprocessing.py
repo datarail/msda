@@ -91,27 +91,19 @@ def pd_import(file, sample_list=[]):
 
 
 def get_primary_ids(secondary_id):
+    """ replace all secondary uniprot ids by primary uniport ids 
+    using the lookup table downloaded from Uniprot """
     ind = df_map.Secondary_ID.tolist().index(secondary_id)
     primary_id = df_map.Primary_ID[ind]
     return primary_id
 
 
-def split_scores(m):
-    try:
-        m1 = m.split(';')[1]
-    except IndexError:
-        m1 = np.nan
-    return float(m1)
-
-
 def filter_score(df):
-    df2 = df.copy()
-    m0 = [float(m.split(';')[0]) for m in df.Max_Score.tolist()]
-    m1 = [split_scores(m) for m in df.Max_Score.tolist()]
-    df2['m0'] = m0
-    df2['m1'] = m1
-    df3 = df2[(df2['m0'] > 13) | (df2['m1'] > 13)]
-    df = df.loc[df3.index.tolist()]
+    """ filter phosphosites for which the localization score is below 13 """
+    df_split = pd.DataFrame(df.Max_Score.str.split(';').tolist(),
+                            index=df.index.tolist()).astype(float)
+    df_split = df_split[df_split > 13].dropna(thresh=1)
+    df = df.loc[df_split.index.tolist()]
     return df
 
 
@@ -152,6 +144,7 @@ def rank_batch_overlap(dfs):
 
 
 def strip_metadata(df, samples):
+    """ return dataframe without metadata columns"""
     # df.index = df.Uniprot_Id.tolist()
     df = df[samples]
     df = df.groupby(df.index).sum()
@@ -159,6 +152,7 @@ def strip_metadata(df, samples):
 
 
 def rename_labels(df, meta_df, pMS=False):
+    """ repalce TMT label by sample name provided in metadata file """
     tmt_labels = meta_df.TMT_label.tolist()
     samples = meta_df.Sample.tolist()
     if pMS:
@@ -181,6 +175,7 @@ def rename_labels(df, meta_df, pMS=False):
 
 
 def rename_bridge(df, batch_num):
+    """ Append batch number to bridge sample label """
     cols = df.columns.tolist()
     cols[-1] = 'Bridge%d' % batch_num
     df.columns = cols
@@ -225,6 +220,10 @@ def merge_batches(filelist, meta_df, pMS=False, norm=False):
 
 
 def make_pMS_identifier(df):
+    """ construct unique phosphosite identifier by combining
+    gene name, phosphorylated amino acid and position.
+    """
+    
     identifier = []
     for id in range(len(df)):
         motif = df.Motif.iloc[id].split(';')
@@ -233,6 +232,11 @@ def make_pMS_identifier(df):
         ms = '_'.join(["%s%s" % (m[6], s) for m, s in zip(motif, sites)])
         identifier.append("%s_%s" % (uid, ms))
     df['identifier'] = identifier
+    df2 = drop_duplicate_psites(df)
+    return d2
+
+def drop_duplicate_psites(df):
+    """ remove duplicate phosphosites. Retain site with maximum intensity across samples """
     df2 = df.copy()
     samples = [s for s in df2.columns.tolist() if 'sum' in s]
     df2['max_int'] = df2[samples].sum(axis=1)
@@ -246,6 +250,7 @@ def combine_duplicates(x):
 
 
 def quantile_normalize(df):
+    """ quantile normalize across genes """
     rank_mean = pd.DataFrame(np.sort(df.values, axis=0),
                              index=range(1, len(df)+1),
                              columns=df.columns).mean(axis=1)
