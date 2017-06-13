@@ -296,3 +296,13 @@ def get_true_site(uid, motif):
 
 #  df_psite_rat[df_psite['SITE_+/-7_AA'].isin(df_inp.sequence.tolist())]
 
+
+def get_modifications(protein, direction='induced'):
+    """ Look up PSP for PTM's that activate/inhibit queried protein """
+    df_ptm_human = df_ptm[df_ptm.ORGANISM == 'human']
+    df_mods = df_ptm_human[(df_ptm.ACC_ID == protein) &
+                           (df_ptm.ON_FUNCTION.str.contains('activity, %s' %  direction))]
+    modifications = df_activating.MOD_RSD.tolist()
+    return activating_activating
+                                 
+
