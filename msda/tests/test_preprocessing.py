@@ -1,6 +1,7 @@
 import pandas as pd
 from msda import preprocessing
 from pandas.util.testing import assert_frame_equal
+from msda import ptm_info
 
 
 def test_quantile_normalize():
@@ -31,4 +32,18 @@ def test_get_primary_ids():
     secondary_id = 'A0A023LWJ7'
     primary_id = preprocessing.get_primary_ids(secondary_id)
     assert primary_id == 'Q0A255'
+
+
+def test_get_activating_modifications():
+    mods = ptm_info.get_modifications('P15056')
+    assert mods == ['S446-p', 'T599-p', 'S602-p', 'S579-p', 'S729-p']
+
+    
+def test_get_inhibitory_modifications():
+    mods = ptm_info.get_modifications('P06400', direction='inhibited')
+    assert mods == ['S795-p', 'S780-p', 'S567-p']
+
+    
+    
+
     
