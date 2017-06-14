@@ -302,7 +302,7 @@ def get_modifications(protein, direction='induced'):
     df_ptm_human = df_ptm[df_ptm.ORGANISM == 'human']
     df_mods = df_ptm_human[(df_ptm.ACC_ID == protein) &
                            (df_ptm.ON_FUNCTION.str.contains('activity, %s' %  direction))]
-    modifications = df_activating.MOD_RSD.tolist()
-    return activating_activating
+    modifications = df_mods.MOD_RSD.tolist()
+    return modifications
                                  
 
