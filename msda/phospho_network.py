@@ -239,10 +239,16 @@ def get_fc(df_input, samples, base_sample):
     return df
 
 
-def series_split(df, col):
+def series_split(df, col, type='str'):
+    df[col] = [str(s) for s in df[col].tolist()]
     series = df[col].str.split(';').apply(pd.Series, 1).stack()
     series.index = series.index.droplevel(-1) # to line up with df's index
     series.name = col
+    if type == 'float':
+        series = series.astype(float)
+    elif type == 'int':
+        series = series.astype(float)
+        series = series.astype(int)
     return series
 
 def split_sites(df):
@@ -257,8 +263,8 @@ def split_sites(df):
     df['Origin'] = origin
     
     motif = series_split(df, 'Motif')
-    max_score = series_split(df, 'Max_Score')
-    sp = series_split(df, 'Site_Position')
+    max_score = series_split(df, 'Max_Score', type='float')
+    sp = series_split(df, 'Site_Position', type='int')
     
     del df['Motif']
     del df['Max_Score']
@@ -274,6 +280,7 @@ def split_sites(df):
                                                   df2.Motif.tolist(),
                                                   df2.Site_Position.tolist(),
                                                   df2.Origin.tolist())]
+    df2.index = df2.Identifier.tolist()
     return df2
 
 
