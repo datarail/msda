@@ -182,10 +182,10 @@ def rename_bridge(df, batch_num):
     return df
 
 
-def merge_batches(filelist, meta_df, pMS=False, norm=False):
+def merge_batches(dflist, meta_df, pMS=False, norm=False):
     df_list = []
-    for file in filelist:
-        df = pd_import(file)
+    for df in dflist:
+        # df = pd_import(file)
         if not pMS:
             df = df.drop_duplicates(['Uniprot_Id'])
         df, samples = rename_labels(df, meta_df, pMS)
@@ -214,8 +214,9 @@ def merge_batches(filelist, meta_df, pMS=False, norm=False):
     else:
         df_merged = pd.concat(df_list, axis=1)
     df_merged = df_merged.groupby(level=0, axis=1).apply(
-        lambda x: x.apply(combine_duplicates, axis=1))
-    df_merged = df_merged.convert_objects(convert_numeric=True)
+          lambda x: x.apply(combine_duplicates, axis=1))
+    df_pms = df_pms[~df_pms.index.str.contains('##')]
+    # df_merged = df_merged.convert_objects(convert_numeric=True)
     return df_merged
 
 
@@ -233,7 +234,7 @@ def make_pMS_identifier(df):
         identifier.append("%s_%s" % (uid, ms))
     df['identifier'] = identifier
     df2 = drop_duplicate_psites(df)
-    return d2
+    return df2
 
 def drop_duplicate_psites(df):
     """ remove duplicate phosphosites. Retain site with maximum intensity across samples """
