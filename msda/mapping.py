@@ -45,3 +45,14 @@ def uid2gn(uid):
     except AttributeError:
         gn = 'unknown'
     return gn
+
+def get_uniprot_id(gene_name):
+    df_map = pd.read_table('resources/hgnc_mapping.txt')
+    try:
+        uniprot_id = df_map[df_map['Approved Symbol'] == gene_name][
+            'UniProt ID(supplied by UniProt)'].values[0]
+    except IndexError:
+        uniprot_id = None
+    except ValueError:
+        uniprot_id = None
+    return uniprot_id
