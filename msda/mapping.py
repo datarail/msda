@@ -1,6 +1,11 @@
 import requests
 import re
 import pandas as pd
+import os
+
+resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             'resources')
+df_map = pd.read_table(os.path.join(resource_path, 'hgnc_mapping.txt'))
 
 
 def ensp2uid(ensp_id):
@@ -20,14 +25,14 @@ def ensp2uid(ensp_id):
 
 
 def name2entrez(name):
-    df_map = pd.read_table('resources/gene_name_mapping.txt')
+    
     entrez_id = df_map[df_map['Approved Symbol'] == name][
         'Entrez Gene ID'].values[0]
     return int(entrez_id)
 
 
 def entrez2name(entrez_id):
-    df_map = pd.read_table('resources/gene_name_mapping.txt')
+    
     gene_name = df_map[df_map['Entrez Gene ID'] == entrez_id][
         'Approved Symbol'].values[0]
     return gene_name
@@ -47,7 +52,7 @@ def uid2gn(uid):
     return gn
 
 def get_uniprot_id(gene_name):
-    df_map = pd.read_table('resources/hgnc_mapping.txt')
+    
     try:
         uniprot_id = df_map[df_map['Approved Symbol'] == gene_name][
             'UniProt ID(supplied by UniProt)'].values[0]
