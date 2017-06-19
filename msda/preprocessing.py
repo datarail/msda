@@ -34,6 +34,8 @@ def pd_import(file, sample_list=[]):
         df = pd.read_excel(file)
     elif '.csv' in file:
         df = pd.read_csv(file)
+    elif isinstance(file, pd.DataFrame):
+        df = file.copy()
     else:
         print file, "is not a supported filetype"
     df = df.rename(columns={'Protein_Id': 'Uniprot_Id',
