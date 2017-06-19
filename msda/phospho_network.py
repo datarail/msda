@@ -296,7 +296,8 @@ def construct_table(df_nt, df_clean):
     df_nt['Motif'] = [m.upper() for m in df_nt['Motif'].tolist()]
     df_nt.index = ["%s_%s" % (g, s) for g,s in zip(df_nt.Gene_Symbol.tolist(),
                                                    df_nt.Site.tolist())]
-    df_kinase['SITE_+/-7_AA'] = [m[1:-1].upper() for m in df_kinase['SITE_+/-7_AA'].tolist()] 
+    df_kinase['SITE_+/-7_AA'] = [m[2:-2].upper() for m in df_kinase['SITE_+/-7_AA'].tolist()]
+    df_clean.Motif = [m[1:-1] for m in df_clean.Motif.tolist()]
     df_psp = df_kinase[df_kinase['SITE_+/-7_AA'].isin(df_clean.Motif.tolist())]
     df_psp = df_psp.rename(columns={'SUBSTRATE': 'Gene_Symbol',
                                     'SUB_MOD_RSD': 'Site',
@@ -308,7 +309,57 @@ def construct_table(df_nt, df_clean):
                                                     df_psp.Site.tolist())]
     df_ks = pd.concat([df_nt, df_psp])
     return df_ks
+
+
+def generate_kinase_annotations(df, path2data):
+    """ Run networkin algorithm and lookup PSP to
+        generate kinase-substrate library sets
     
+    Parameter
+    ---------
+    df: pandas dataframe
+       phosphoproteomics dataset 
+    path2data: str
+       local path to save annotation files generated
+    
+    
+    Return
+    ------
+    df_out: pandas dataframe
+       longtable of kinase annotatiosn from PSP and NetworKin
+    """
+    dfc = split_sites(df)
+    subf, df_res = generate_substrate_fasta(dfc)
+
+    fasfile = '%substrate.fas' % path2data
+    resfile = '%spsite.res' % path2data
+    outfile = '%sNetwork_predictions.txt' % path2data
+
+    with open(fasfile, 'wb') as f:
+        for line in subf:
+            f.write(line)
+    df_res.to_csv(resfile, index=False, sep='\t')
+
+    # run networkin prediction
+    run_networkin(fasfile, resfile, outfile)
+    print "Running networkin algorithm. This may take 2+ hours"
+    print "----------------------------------------------------"
+
+    df_nt = pd.read_table(outfile)
+    df_nt = df_nt[df_nt['NetworKIN score'] >= 2]
+    df_out = construct_table(df_nt, df_clean)
+
+    kin_table = '%skinase_substrate_table.csv' % path2data
+    df_out.to_csv(kin_table, index=False)
+
+    ksets = generate_ksea_library(kin_table, set_size=5)
+    library = '%sksea_library' % path2data
+
+    with open("%s.gmt" % library, 'wb') as f:
+        for line in ksets:
+            f.write("%s\n" % line)
+
+    return df_out       
     
     
 
