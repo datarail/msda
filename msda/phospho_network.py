@@ -299,6 +299,8 @@ def construct_table(df_nt, df_clean):
     df_kinase['SITE_+/-7_AA'] = [m[2:-2].upper() for m in df_kinase['SITE_+/-7_AA'].tolist()]
     df_clean.Motif = [m[1:-1] for m in df_clean.Motif.tolist()]
     df_psp = df_kinase[df_kinase['SITE_+/-7_AA'].isin(df_clean.Motif.tolist())]
+    df_psp = df_psp[df_psp.SUB_ACC_ID.isin(df_clean.Uniprot_Id.tolist())]
+    df_psp['SUBSTRATE'] = [mapping.uid2gn(id) for id in df_psp.SUB_ACC_ID.tolist()]
     df_psp = df_psp.rename(columns={'SUBSTRATE': 'Gene_Symbol',
                                     'SUB_MOD_RSD': 'Site',
                                     'SITE_+/-7_AA': 'Motif'})
