@@ -55,7 +55,7 @@ def name2entrez(name):
 
 
 def entrez2name(entrez_id):
-      """ Return Gene name given Entrez ID 
+    """ Return Gene name given Entrez ID 
     
     Parameter
     ---------
@@ -99,7 +99,7 @@ def uid2gn(uid):
 
 
 def get_uniprot_id(gene_name):
-        """ Return Uniprot Id given Gene Name
+    """ Return Uniprot Id given Gene Name
     
     Parameter
     ---------
