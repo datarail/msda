@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-from mapping import uid2gn
+from mapping import get_name_from_uniprot
 import numpy as np
 import batch_normalization as bn
 import os
@@ -13,100 +13,135 @@ df_map = pd.read_csv(os.path.join(resource_path, 'Uniprot_sec_to_prim.csv'),
 
 delac_tr = ['C9JYP6', 'Q7Z469']
 
+def read_dataset(file):
+    """ read dataset into a pandas dataframe
+    Parameters
+    ----------
+    file: string
 
-def get_samples(key_file):
-    lines = open(key_file, 'rt').readlines()
-    for i, l in enumerate(lines):
-        if l.startswith('TMT-126'):
-            entry_lines = lines[i:]
-    sample_id = {}
-    for l in entry_lines:
-        id, sample = l.split()
-        sample_id[id] = sample
-    df = pd.DataFrame(sample_id.items(),
-                      columns=['mass_spec_label', 'samples'])
-    sample_list = df['samples'].tolist()
-    return sample_list
-
-
-def pd_import(file, sample_list=[]):
-    if '.xlsx' in file:
+    Return
+    ------
+    df: pandas dataframe
+    """ 
+    
+    if file.endswith('.xlsx'):
         df = pd.read_excel(file)
-    elif '.csv' in file:
+    elif file.endswith('.csv'):
         df = pd.read_csv(file)
-    elif isinstance(file, pd.DataFrame):
-        df = file.copy()
+    elif file.endswith('.tsv'):
+        df = pd.read_table(file)
     else:
-        print file, "is not a supported filetype"
+        raise ValueError("Unknown file extension")
+    return df
+
+
+def verify_column_labels(df, pMS=False):
+    columns = df.columns.tolist()
+    standard_labels = ['Uniprot_Id', 'Gene_Symbol']
+    phospho_labels = ['Max_Score', 'Site_Position', 'Motif']
+    assert set(standard_labels) < set(columns), "Uniport_Id and Gene_Symbol are expected column labels"
+    if pMS:
+        assert set(phospho_labels) < set(columns), "Max_Score, Site_position and Motif are expected columns in phosphoproteomics datasets"
+    return None
+
+
+def remove_human_contaminants(df):
+    df = df[~df.Uniprot_Id.str.contains('HUMAN_contaminant')]
+    return df
+
+
+def remove_reverse_proteins(df):
+    df = df[~df.Uniprot_Id.str.contains('##')]
+    return df
+
+
+def get_primary_ids(secondary_id):
+    """ replace secondary uniprot ids by primary uniport ids 
+    using the lookup table downloaded from Uniprot """
+    try:
+        primary_id = df_map[df_map.Secondary_ID == secondary_id]['Primary_ID'].values[0]
+    except IndexError:
+        primary_id = None
+    return primary_id
+
+
+def correct_gene_names(df):
+    """ Fix datetime entries in Gene names
+    """
+    update_symbols = []
+    for i, gs in enumerate(df.Gene_Symbol):
+        if (isinstance(gs, pd.DataFrame)) | (isinstance(gs, float)) | (':' in gs):
+            update_symbols.append(get_name_from_uniprot(df.Uniprot_Id.ix[i]))
+        else:
+            update_symbols.append(gs)
+    df.Gene_Symbol = update_symbols
+    return df
+
+def correct_uniprot_identifiers(df):
+    """ Update secondary uniprot identifier and remove pre- & suffixes
+    """
+    # remove pre- and suffix from Uniprot Identifiers
+    try:
+        uniprot_id = [uid.split('|')[1] for uid in df.Uniprot_Id.tolist()]
+        df.Uniprot_Id = uniprot_id
+    except IndexError:
+        pass
+
+    secondary_identifiers = df[df.Uniprot_Id.isin(df_map.Secondary_ID.tolist())][
+        'Uniprot_Id'].tolist()
+    # Replace secondary accesion numbers with primary ID's
+    uids = []
+    for pid in df.Uniprot_Id.tolist():
+        if pid in secondary_identifiers:
+            updated_pid = get_primary_ids(pid)
+        else:
+            updated_pid = None
+        if updated_pid:
+            uids.append(updated_pid)
+        else:
+            uids.append(pid)
+    df.Uniprot_Id = uids
+
+    # Remove deleted uniprot ids
+    df = df[~df.Uniprot_Id.isin(delac_tr)]
+    
+    df['Uniprot_Id_prefix'] = [pr.strip().split('-')[0]
+                               for pr in df.Uniprot_Id.tolist()]
+    return df
+
+    
+def preprocess_dataset(file, pMS=False):
+    """ Dataset is preprocessed to correct for outdated UniProt Identifiers, 
+    datetime errors in gene name, and human contaminant proteins.
+    Parameter
+    --------
+    file: string/ pandas dataframe
+    pMS: boolean True/False
+        If True, dataset is a phosphorpoteomics dataset
+
+    Return
+    ------
+    df: pandas datframe
+    """
+    
+    if isinstance(file, pd.DataFrame):
+        df = df.copy()
+    else:
+        df = read_dataset(file)
+        
+    # Standardize column labels    
     df = df.rename(columns={'Protein_Id': 'Uniprot_Id',
                             'Protein Id': 'Uniprot_Id',
                             'gene_symbol': 'Gene_Symbol',
                             'Uniprot_ID': 'Uniprot_Id'})
     cols = [re.sub(" ", "_", str(i)) for i in df.columns]
-
-    if sample_list:
-        sample_index = [cols.index(s) for s in cols
-                        if "_sn_" in s]
-        cols[sample_index[0]: sample_index[-1]+1] = sample_list
-    df.columns = cols
-
-    df = df[~df.Uniprot_Id.str.contains('UPSP')]
-    try:
-        uniprot_id = [re.split('\|', i)[1] for i in df.Uniprot_Id.tolist()]
-        df.Uniprot_Id = uniprot_id
-    except IndexError:
-        pass
-
-    # Find secondary accession numbers in dataframe
-    sec_ids = list(set(df.Uniprot_Id.tolist()).
-                   intersection(df_map.Secondary_ID.tolist()))
-
-    # Replace secondary accesion numbers with primary ID's
-    update_uids = []
-    for i, pid in enumerate(df.Uniprot_Id):
-        if pid in sec_ids:
-            update_uids.append(get_primary_ids(pid))
-        else:
-            update_uids.append(pid)
-    df.Uniprot_id = update_uids
-
-    # Fix datetime entries in Gene names
-    update_symbols = []
-    for i, gs in enumerate(df.Gene_Symbol):
-        if isinstance(gs, pd.datetime):
-            update_symbols.append(uid2gn(df.Uniprot_Id.ix[i]))
-        elif type(gs) == float:
-            update_symbols.append(uid2gn(df.Uniprot_Id.ix[i]))
-        elif ':' in gs:
-            update_symbols.append(uid2gn(df.Uniprot_Id.ix[i]))
-        else:
-            update_symbols.append(gs)
-    df.Gene_Symbol = update_symbols
-
-    # Remove deleted uniprot ids
-    df = df[~df.Uniprot_Id.isin(delac_tr)]
-
-    df['Uniprot_Id_prefix'] = [pr.strip().split('-')[0]
-                               for pr in df.Uniprot_Id.tolist()]
-
+    verify_column_labels(df, pMS)
+    df = remove_human_contaminants(df)
+    df = remove_reverse_proteins(df)
+    df = correct_uniprot_identifiers(df)
+    df = correct_gene_names(df)
     return df
 
-
-def get_primary_ids(secondary_id):
-    """ replace all secondary uniprot ids by primary uniport ids 
-    using the lookup table downloaded from Uniprot """
-    ind = df_map.Secondary_ID.tolist().index(secondary_id)
-    primary_id = df_map.Primary_ID[ind]
-    return primary_id
-
-
-def filter_score(df):
-    """ filter phosphosites for which the localization score is below 13 """
-    df_split = pd.DataFrame(df.Max_Score.str.split(';').tolist(),
-                            index=df.index.tolist()).astype(float)
-    df_split = df_split[df_split > 13].dropna(thresh=1)
-    df = df.loc[df_split.index.tolist()]
-    return df
 
 
 def noise_filter(df, rep_suffix='rep'):
@@ -259,6 +294,22 @@ def quantile_normalize(df):
                              columns=df.columns).mean(axis=1)
     df_quantile = df.rank(method='min').stack().astype(int).map(rank_mean).unstack()
     return df_quantile
+
+
+def get_samples(key_file):
+    lines = open(key_file, 'rt').readlines()
+    for i, l in enumerate(lines):
+        if l.startswith('TMT-126'):
+            entry_lines = lines[i:]
+    sample_id = {}
+    for l in entry_lines:
+        id, sample = l.split()
+        sample_id[id] = sample
+    df = pd.DataFrame(sample_id.items(),
+                      columns=['mass_spec_label', 'samples'])
+    sample_list = df['samples'].tolist()
+    return sample_list
+
 
 
 
