@@ -4,4 +4,4 @@ python:
 sudo: false
 dist: trusty
 install: pip install numpy scipy matplotlib pandas seaborn scikit_learn requests pytest
-script: PYTHONPATH=. pytest msda/tests
+script: pytest msda/tests
