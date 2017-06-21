@@ -20,7 +20,6 @@ def test_entrez2name():
     assert gene_name == 'CDK2'
 
 
-
 def test_get_uniprot_id():
     uid = mapping.get_uniprot_id('CDK2')
     assert uid == 'P24941'

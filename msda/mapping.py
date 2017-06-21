@@ -8,7 +8,7 @@ resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 df_map = pd.read_table(os.path.join(resource_path, 'hgnc_mapping.txt'))
 
 
-def ensp2uid(ensp_id):
+def get_uniprot_from_ensembl(ensp_id):
     """ Return Uniprot ID given Ensembl Protein ID 
     
     Parameter
@@ -18,7 +18,7 @@ def ensp2uid(ensp_id):
     
     Return
     ------
-    id: string
+    uniprot_id: string
        Uniprot_Id
     """
     url = "http://grch37.rest.ensembl.org/xrefs/id/"
@@ -28,15 +28,15 @@ def ensp2uid(ensp_id):
     r = requests.get(url + query + db)
     dict = r.json()
     try:
-        id = dict[0]['primary_id']
+        uniprot_id = dict[0]['primary_id']
     except IndexError:
-        id = 'unknown'
+        uniprot_id = None
     except KeyError:
-        id = 'unknown'
-    return id
+        uniprot_id = None
+    return uniprot_id
 
 
-def name2entrez(name):
+def get_entrez_from_name(name):
     """ Return Entrez Id given Gene Name
     
     Parameter
@@ -49,17 +49,20 @@ def name2entrez(name):
     id: int
        Entrez ID
     """
-    entrez_id = df_map[df_map['Approved Symbol'] == name][
-        'Entrez Gene ID'].values[0]
-    return int(entrez_id)
+    try:
+        entrez_id = int(df_map[df_map['Approved Symbol'] == name][
+            'Entrez Gene ID'].values[0])
+    except IndexError:
+        entrez_id = None
+    return entrez_id
 
 
-def entrez2name(entrez_id):
+def get_name_from_entrez(entrez_id):
     """ Return Gene name given Entrez ID 
     
     Parameter
     ---------
-    ensp_id: int
+    entrez_id: int
         Entrez ID
     
     Return
@@ -67,13 +70,16 @@ def entrez2name(entrez_id):
     id: string
        Gene Name/Symbol
     """
-    gene_name = df_map[df_map['Entrez Gene ID'] == entrez_id][
-        'Approved Symbol'].values[0]
+    try:
+        gene_name = df_map[df_map['Entrez Gene ID'] == entrez_id][
+            'Approved Symbol'].values[0]
+    except IndexError:
+        gene_name = None
     return gene_name
 
 
 
-def uid2gn(uid):
+def get_name_from_uniprot(uniprot_id):
     """ Return Gene name given Uniport Id
     
     Parameter
@@ -86,19 +92,19 @@ def uid2gn(uid):
     gene_name: string
        Gene Name/ Symbol
     """
-    uid = uid.split('-')[0]
-    url = "http://www.uniprot.org/uniprot/%s.fasta" % uid
+    uniprot_id= uniprot_id.split('-')[0]
+    url = "http://www.uniprot.org/uniprot/%s.fasta" % uniprot_id
 
     r = requests.get(url)
     try:
         line1 = r.text.split('\n')[0]
         gene_name = re.search('GN=(.*) PE', line1).group(1)
     except AttributeError:
-        gene_name = 'unknown'
+        gene_name = None
     return gene_name
 
 
-def get_uniprot_id(gene_name):
+def get_uniprot_from_name(gene_name):
     """ Return Uniprot Id given Gene Name
     
     Parameter
