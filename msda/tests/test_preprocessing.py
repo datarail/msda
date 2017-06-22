@@ -52,15 +52,28 @@ def test_remove_reverse_proteins():
      assert_frame_equal(dfs, dfs_ref)
     
     
-    
+def test_correct_gene_names():
+     df = pd.DataFrame({'Gene_Symbol': ['CDK2', '2016-03-06 00:00:00'],
+                        'Uniprot_Id': ['P24941',  'O60337'],
+                        'C3': [3, 5]})
+     dfg = preprocessing.correct_gene_names(df)
+     dfg_ref = pd.DataFrame({'Gene_Symbol': ['CDK2', 'MARCH6'],
+                        'Uniprot_Id': ['P24941',  'O60337'],
+                        'C3': [3, 5]})
+     assert_frame_equal(dfg, dfg_ref)
 
-# def test_filter_score():
-#     df = pd.DataFrame({'Max_Score': ['4;7', '15;2']},
-#                       index=['BRAF', 'RAF1'])
-#     dfs = preprocessing.filter_score(df)
-#     dfs_ref =  pd.DataFrame({'Max_Score': ['15;2']},
-#                       index=['RAF1'])
-#     assert_frame_equal(dfs, dfs_ref)
+
+def test_correct_uniprot_identifiers():
+     df = pd.DataFrame({'Uniprot_Id': ['sp|P24941-2|CDK2_HUMAN', 'sp|Q7Z469|HUMAN',
+                                       'sp|A0A023GPJ5|HUMAN'],
+                        'C2': [4,  1, 4]}, index=['A', 'B', 'C'])
+     dfp = preprocessing.correct_uniprot_identifiers(df)
+     dfp_ref =  pd.DataFrame({'Uniprot_Id': ['P24941-2','P13060'],
+                              'Uniprot_Id_prefix': ['P24941','P13060'],
+                        'C2': [4, 4]}, index=['A', 'C'])
+     assert_frame_equal(dfp, dfp_ref)
+                      
+    
 
 
 def test_get_primary_ids():
