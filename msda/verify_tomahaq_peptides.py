@@ -5,6 +5,9 @@ import requests
 
 
 def make_report(file):
+    """ make a report file that combines soft constatins scores on
+    tryptic peptides with PTMs and specifcity     
+    """
     f = open(file).readlines()
     uid = file.strip().split('_')[0]
     peptide_list = [s.strip().split('\n')[0] for s in f]
@@ -18,6 +21,9 @@ def make_report(file):
 
 
 def prune_list(peptide_list, uid):
+    """creates table of candidate tryptic peptides with scores based on 
+    soft contraints and 
+    """
     tryptic_peptides = [p for p in peptide_list if _is_tryptic(p, uid)]
     l1, l2, l3, l4, l5 = [], [], [], [], []
     if tryptic_peptides:
@@ -40,6 +46,8 @@ def prune_list(peptide_list, uid):
 
 
 def _is_tryptic(peptide_seq, uid):
+    """ Verify if peptide is tryptic
+    """
     tr = not verify_cm(peptide_seq) and verify_kr_end(
         peptide_seq, uid) and not verify_kr_inner(
             peptide_seq) and verify_preceeding(peptide_seq, uid)
@@ -47,12 +55,16 @@ def _is_tryptic(peptide_seq, uid):
 
 
 def verify_cm(peptide_seq):
+    """ Peptides should not contain C or M
+    """
     cm = bool(re.search('C', peptide_seq)) or bool(
         re.search('M', peptide_seq))
     return cm
 
 
 def verify_kr_end(peptide_seq, uid):
+    """ Peptide should end with K or R
+    """
     if verify_cterminal(peptide_seq, uid):
         end = True
         return end
@@ -63,12 +75,17 @@ def verify_kr_end(peptide_seq, uid):
 
 
 def verify_kr_inner(peptide_seq):
+    """ verify if K or R feature within the peptide sequence 
+    (an indicator of missed cleaveges)
+    """
     kr_inner = bool(re.search('K', peptide_seq[:-1])) or bool(
         re.search('R', peptide_seq[:-1]))
     return kr_inner
 
 
 def verify_preceeding(peptide_seq, uid):
+    """ verify if preeciding amino acid is M, K, R, or n-terminal end
+    """
     url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
     r = requests.get(url)
     fasta_output = str(r.text)
@@ -89,6 +106,8 @@ def verify_preceeding(peptide_seq, uid):
 
 
 def verify_subsequent(peptide_seq, uid):
+    """ get subsequent amino acid of the peptide sequence
+    """
     url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
     r = requests.get(url)
     fasta_output = str(r.text)
@@ -105,6 +124,9 @@ def verify_subsequent(peptide_seq, uid):
 
 
 def verify_cterminal(peptide_seq, uid):
+    """ verify if peptide sequence corresponds to the c-terminal
+    end of the protein
+    """
     url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
     r = requests.get(url)
     fasta_output = str(r.text)
@@ -119,7 +141,17 @@ def verify_cterminal(peptide_seq, uid):
 
 
 def score_(peptide_seq, uid):
+    """ Score peptide eligibility to be a TOMAHA peptide by scoring soft constraints
+    SOFT CONSTRAINTS
+    ----------------
+    1. Does not begin with EDQ
+    2. Does not begin/end with K.K, K.R, R.R, R.K
+    3. Does not end in K.E, K.D, R.D, R..E
+    4. Lenght should be more than 5 and less than 35
+
+    """
     edq, kr, ed, length_crit, score = False, False, False, False, 0
+    
     if bool(re.search("^[E,D,Q]", peptide_seq)):
         edq = True
         score -= 1
@@ -138,7 +170,8 @@ def score_(peptide_seq, uid):
 
 
 def check_ptm_redundancy(df):
-
+    """ Query PhosphoSitePlus for ptms and specificity to protein of interest 
+    """
     query_list = ['\t'.join(['human', p])
                   for p in df.sequence.tolist()]
     query_list.insert(0, 'species\tsequence')
