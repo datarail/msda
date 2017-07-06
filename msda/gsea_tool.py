@@ -51,6 +51,8 @@ def make_rnkfile(df, sample1, sample2):
 
 
 def plot_nes(df, filter=False, top=10, outfile=None,
+             pval_label='Nom p-val', fdr_label='FDR q-val',
+             regulon='NAME',
              fontsize=12, show_pval=False):
     sns.set_style('dark')
     font = {'family': 'sans-serif',
@@ -60,7 +62,7 @@ def plot_nes(df, filter=False, top=10, outfile=None,
             }
     sns.despine()
     if filter is True:
-        df = df[(df['NOM p-val'] <= 0.05) & (df['FDR q-val'] < 0.2)]
+        df = df[(df[pval_label] <= 0.05) & (df[fdr_label] < 0.2)]
     df1 = df[df.NES > 0].iloc[:top, :]
     df2 = df[df.NES < 0].iloc[:top, :].sort_values(by='NES', ascending=False)
     ylen = np.max([len(df1), len(df2)])
@@ -68,13 +70,13 @@ def plot_nes(df, filter=False, top=10, outfile=None,
     if not df1.empty:
         df1.NES.plot(ax=axes[1], kind='barh', width=0.3,
                      color='Green', alpha=0.5)
-        for pos, name in zip(range(ylen), df1.NAME.tolist()):
+        for pos, name in zip(range(ylen), df1[regulon].tolist()):
             axes[1].text(0, pos-0.25, name, horizontalalignment='left',
                          fontdict=font)
     if not df2.empty:
         df2.NES.plot(ax=axes[0], kind='barh', width=0.3,
                      color='Red', alpha=0.5)
-        for pos, name in zip(range(ylen), df2.NAME.tolist()):
+        for pos, name in zip(range(ylen), df2[regulon].tolist()):
             axes[0].text(0, pos+0.25, name, horizontalalignment='right',
                          fontdict=font)
     axes[0].set_yticks([])
@@ -85,9 +87,9 @@ def plot_nes(df, filter=False, top=10, outfile=None,
 
     if show_pval:
         pvals1 = ["%.2f" % p if p > 0 else "%.1f" % p
-                  for p in df1['NOM p-val'].tolist()]
+                  for p in df1[pval_label].tolist()]
         pvals2 = ["%.2f" % p if p > 0 else "%.1f" % p
-                  for p in df2['NOM p-val'].tolist()]
+                  for p in df2[pval_label].tolist()]
         for x_pos, y_pos, pval in zip(df1.NES.tolist(), range(ylen),
                                       pvals1):
             axes[1].text(x_pos+0.1, y_pos, pval)
