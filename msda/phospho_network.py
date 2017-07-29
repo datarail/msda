@@ -284,7 +284,7 @@ def split_sites(df):
     return df2
 
 
-def construct_table(df_nt, df_clean):
+def construct_table(df_nt, dfc):
     col_rename = {'Target description': 'Gene_Symbol',
                   'Position': 'Site',
                   'Kinase/Phosphatase/Phospho-binding domain description': 'KINASE',
@@ -294,21 +294,26 @@ def construct_table(df_nt, df_clean):
     df_nt = df_nt[col_rename.values()]
     df_nt['Source'] = ['NetworKIN'] * len(df_nt)
     df_nt['Motif'] = [m.upper() for m in df_nt['Motif'].tolist()]
-    df_nt.index = ["%s_%s" % (g, s) for g,s in zip(df_nt.Gene_Symbol.tolist(),
-                                                   df_nt.Site.tolist())]
-    df_kinase['SITE_+/-7_AA'] = [m[2:-2].upper() for m in df_kinase['SITE_+/-7_AA'].tolist()]
+    df_nt.index = ["%s_%s" % (g, s) for g, s in zip(df_nt.Gene_Symbol.tolist(),
+                                                    df_nt.Site.tolist())]
+    df_kinase['SITE_+/-7_AA'] = [m[2:-2].upper()
+                                 for m in df_kinase['SITE_+/-7_AA'].tolist()]
+    df_clean = dfc.copy()
     df_clean.Motif = [m[1:-1] for m in df_clean.Motif.tolist()]
     df_psp = df_kinase[df_kinase['SITE_+/-7_AA'].isin(df_clean.Motif.tolist())]
+    print df_psp.head()
     df_psp = df_psp[df_psp.SUB_ACC_ID.isin(df_clean.Uniprot_Id.tolist())]
-    df_psp['SUBSTRATE'] = [mapping.uid2gn(id) for id in df_psp.SUB_ACC_ID.tolist()]
+    df_psp['SUBSTRATE'] = [mapping.get_name_from_uniprot(id)
+                           for id in df_psp.SUB_ACC_ID.tolist()]
     df_psp = df_psp.rename(columns={'SUBSTRATE': 'Gene_Symbol',
                                     'SUB_MOD_RSD': 'Site',
                                     'SITE_+/-7_AA': 'Motif'})
     df_psp['confidence'] = [100] * len(df_psp)
     df_psp = df_psp[col_rename.values()]
     df_psp['Source'] = ['PSP'] * len(df_psp)
-    df_psp.index = ["%s_%s" % (g, s) for g,s in zip(df_psp.Gene_Symbol.tolist(),
-                                                    df_psp.Site.tolist())]
+    df_psp.index = ["%s_%s" % (g, s)
+                    for g, s in zip(df_psp.Gene_Symbol.tolist(),
+                                    df_psp.Site.tolist())]
     df_ks = pd.concat([df_nt, df_psp])
     return df_ks
 
@@ -333,7 +338,7 @@ def generate_kinase_annotations(df, path2data):
     dfc = split_sites(df)
     subf, df_res = generate_substrate_fasta(dfc)
 
-    fasfile = '%substrate.fas' % path2data
+    fasfile = '%ssubstrate.fas' % path2data
     resfile = '%spsite.res' % path2data
     outfile = '%sNetwork_predictions.txt' % path2data
 
@@ -349,7 +354,7 @@ def generate_kinase_annotations(df, path2data):
 
     df_nt = pd.read_table(outfile)
     df_nt = df_nt[df_nt['NetworKIN score'] >= 2]
-    df_out = construct_table(df_nt, df_clean)
+    df_out = construct_table(df_nt, dfc)
 
     kin_table = '%skinase_substrate_table.csv' % path2data
     df_out.to_csv(kin_table, index=False)
@@ -362,9 +367,3 @@ def generate_kinase_annotations(df, path2data):
             f.write("%s\n" % line)
 
     return df_out       
-    
-    
-
-    
-    
-    
