@@ -252,7 +252,7 @@ def merge_batches(dflist, meta_df, pMS=False, norm=False):
         df_merged = pd.concat(df_list, axis=1)
     df_merged = df_merged.groupby(level=0, axis=1).apply(
           lambda x: x.apply(combine_duplicates, axis=1))
-    df_pms = df_pms[~df_pms.index.str.contains('##')]
+    # df_pms = df_pms[~df_pms.index.str.contains('##')]
     # df_merged = df_merged.convert_objects(convert_numeric=True)
     return df_merged
 
