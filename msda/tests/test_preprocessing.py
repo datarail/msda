@@ -23,14 +23,13 @@ def test_remove_human_contaminants():
                                        'Q4567', '4_HUMAN_contaminant'],
                         'C2': [4,  1, 4, 2],
                         'C3': [3, 5, 6, 8]},
-                       index=['A', 'B',
-                              'C', 'D'])
+                       index=[0, 1, 2, 3])
      
      dfs = preprocessing.remove_human_contaminants(df)
      dfs_ref = pd.DataFrame({'Uniprot_Id': ['P1234',  'Q4567'],
                         'C2': [4, 4],
                         'C3': [3, 6]},
-                       index=['A', 'C'])
+                       index=[0, 2])
      
      assert_frame_equal(dfs, dfs_ref)
 
@@ -40,14 +39,13 @@ def test_remove_reverse_proteins():
                                        'Q4567', '##Q4567'],
                         'C2': [4,  1, 4, 2],
                         'C3': [3, 5, 6, 8]},
-                       index=['A', 'B',
-                              'C', 'D'])
+                       index=[0, 1, 2, 3])
      
      dfs = preprocessing.remove_reverse_proteins(df)
      dfs_ref = pd.DataFrame({'Uniprot_Id': ['P1234',  'Q4567'],
                         'C2': [4, 4],
                         'C3': [3, 6]},
-                       index=['A', 'C'])
+                       index=[0, 2])
      
      assert_frame_equal(dfs, dfs_ref)
     
