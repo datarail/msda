@@ -328,8 +328,8 @@ def generate_kinase_annotations(df, path2data):
        phosphoproteomics dataset 
     path2data: str
        local path to save annotation files generated
-    
-    
+
+
     Return
     ------
     df_out: pandas dataframe
@@ -353,17 +353,17 @@ def generate_kinase_annotations(df, path2data):
     print "----------------------------------------------------"
 
     df_nt = pd.read_table(outfile)
-    df_nt = df_nt[df_nt['NetworKIN score'] >= 2]
+    df_nt = df_nt[df_nt['NetworKIN score'] >= 4]
     df_out = construct_table(df_nt, dfc)
 
     kin_table = '%skinase_substrate_table.csv' % path2data
     df_out.to_csv(kin_table, index=False)
 
-    ksets = generate_ksea_library(kin_table, set_size=5)
+    ksets = generate_ksea_library(kin_table, set_size=25)
     library = '%sksea_library' % path2data
 
     with open("%s.gmt" % library, 'wb') as f:
         for line in ksets:
             f.write("%s\n" % line)
 
-    return df_out       
+    return df_out
