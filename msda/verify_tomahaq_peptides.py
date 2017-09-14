@@ -84,7 +84,7 @@ def verify_kr_inner(peptide_seq):
 
 
 def verify_preceeding(peptide_seq, uid):
-    """ verify if preeciding amino acid is M, K, R, or n-terminal end
+    """ verify if preceeding amino acid is M, K, R, or n-terminal end
     """
     url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
     r = requests.get(url)
@@ -105,7 +105,7 @@ def verify_preceeding(peptide_seq, uid):
     return tryptic
 
 
-def verify_subsequent(peptide_seq, uid):
+def get_subsequent(peptide_seq, uid):
     """ get subsequent amino acid of the peptide sequence
     """
     url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
@@ -116,11 +116,12 @@ def verify_subsequent(peptide_seq, uid):
     start_ind = protein_sequence.find(peptide_seq)
     # index of subsequent amino acid
     next_ind = start_ind + len(peptide_seq)
-    try:
+    if next_ind >= len(peptide_seq):
+        raise ValueError("peptide is c-terminal")
+    else:
         sa = protein_sequence[next_ind]
-    except IndexError:
-        print peptide_seq, uid
-    return sa
+    return sa    
+    
 
 
 def verify_cterminal(peptide_seq, uid):
@@ -156,13 +157,15 @@ def score_(peptide_seq, uid):
         edq = True
         score -= 1
     if not verify_cterminal(peptide_seq, uid):
-        s = verify_subsequent(peptide_seq, uid)
+        s = get_subsequent(peptide_seq, uid)
         if (s == 'K') or (s == 'R'):
             kr = True
             score -= 1
-        if (s == 'E') or (s == 'D'):
+        elif (s == 'E') or (s == 'D'):
             ed = True
             score -= 1
+        else:
+            pass
     if not 5 <= len(peptide_seq) < 35:
         length_crit = True
         score -= 1
