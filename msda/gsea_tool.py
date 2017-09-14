@@ -38,20 +38,20 @@ def get_gsea_enrichment(input_file, library, out_folder=None, out_file=None):
     return df
 
 
-def make_rnkfile(df, sample1, sample2):
+def make_rnkfile(df, sample1, sample2, identifier):
     df2 = df.copy()
     df2[sample1] = df2[sample1].div(df2[sample2])
     df2[sample1] = df2[sample1].apply(np.log2)
     df2 = df2.sort([sample1])
-    df2 = df2[['Gene_Symbol', sample1]]
-    df2.Gene_Symbol = [g.upper() for g in df2.Gene_Symbol.tolist()]
+    df2 = df2[[identifier, sample1]]
+    df2[identifier] = [g.upper() for g in df2[identifier].tolist()]
     df2 = df2.replace([-np.inf, np.inf], np.nan)
     df2 = df2.dropna()
     return df2
 
 
 def plot_nes(df, filter=False, top=10, outfile=None,
-             pval_label='Nom p-val', fdr_label='FDR q-val',
+             pval_label='NOM p-val', fdr_label='FDR q-val',
              regulon='NAME',
              fontsize=12, show_pval=False):
     sns.set_style('dark')
