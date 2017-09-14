@@ -47,11 +47,13 @@ def verify_column_labels(df, pMS=False):
 
 def remove_human_contaminants(df):
     df = df[~df.Uniprot_Id.str.contains('HUMAN_contaminant')]
+    df.index = range(len(df))
     return df
 
 
 def remove_reverse_proteins(df):
     df = df[~df.Uniprot_Id.str.contains('##')]
+    df.index = range(len(df))
     return df
 
 
@@ -70,8 +72,8 @@ def correct_gene_names(df):
     """
     update_symbols = []
     for i, gs in enumerate(df.Gene_Symbol):
-        if (isinstance(gs, pd.DataFrame)) | (isinstance(gs, float)) | (':' in gs):
-            update_symbols.append(get_name_from_uniprot(df.Uniprot_Id.ix[i]))
+        if (not (isinstance(gs, str))) or (':' in gs):
+            update_symbols.append(get_name_from_uniprot(df.Uniprot_Id.iloc[i]))
         else:
             update_symbols.append(gs)
     df.Gene_Symbol = update_symbols
@@ -125,7 +127,7 @@ def preprocess_dataset(file, pMS=False):
     """
     
     if isinstance(file, pd.DataFrame):
-        df = df.copy()
+        df = file.copy()
     else:
         df = read_dataset(file)
         
@@ -135,13 +137,13 @@ def preprocess_dataset(file, pMS=False):
                             'gene_symbol': 'Gene_Symbol',
                             'Uniprot_ID': 'Uniprot_Id'})
     cols = [re.sub(" ", "_", str(i)) for i in df.columns]
+    df.columns = cols
     verify_column_labels(df, pMS)
     df = remove_human_contaminants(df)
     df = remove_reverse_proteins(df)
     df = correct_uniprot_identifiers(df)
     df = correct_gene_names(df)
     return df
-
 
 
 def noise_filter(df, rep_suffix='rep'):
