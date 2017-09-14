@@ -29,7 +29,7 @@ def test_remove_human_contaminants():
      dfs_ref = pd.DataFrame({'Uniprot_Id': ['P1234',  'Q4567'],
                         'C2': [4, 4],
                         'C3': [3, 6]},
-                       index=[0, 2])
+                       index=[0, 1])
      
      assert_frame_equal(dfs, dfs_ref)
 
@@ -45,7 +45,7 @@ def test_remove_reverse_proteins():
      dfs_ref = pd.DataFrame({'Uniprot_Id': ['P1234',  'Q4567'],
                         'C2': [4, 4],
                         'C3': [3, 6]},
-                       index=[0, 2])
+                       index=[0, 1])
      
      assert_frame_equal(dfs, dfs_ref)
     
