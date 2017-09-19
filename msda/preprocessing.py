@@ -313,6 +313,9 @@ def get_samples(key_file):
     return sample_list
 
 
+def merge_duplicate_features(df):
+    """ Merge duplicate features in dataframe by
+    taking their mean values. feature names have to be the index """
 
-
- 
+    df2 = df.groupby(df.index).mean()
+    return df2
