@@ -3,10 +3,10 @@ import collections
 import re
 from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
-from sklearn.cross_validation import Bootstrap
+# from sklearn.cross_validation import Bootstrap
 import numpy as np
 import requests
-import seaborn as sns
+# import seaborn as sns
 
 
 # http://pir.georgetown.edu/cgi-bin/comp_mw.pl?ids=P53039&seq=&submit=Submit
