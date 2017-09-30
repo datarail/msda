@@ -2,6 +2,7 @@ import requests
 import re
 import pandas as pd
 import os
+import numpy as np
 
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              'resources')
@@ -125,3 +126,46 @@ def get_uniprot_from_name(gene_name):
     except ValueError:
         uniprot_id = None
     return uniprot_id
+
+
+def get_name_from_ensembl(ensembl_id):
+    """ Return Gene name given Entrez ID 
+    
+    Parameter
+    ---------
+    ensembl_id: str
+        Ensembl ID
+    
+    Return
+    ------
+    id: string
+       Gene Name/Symbol
+    """
+    try:
+        gene_name = df_map[df_map['Ensembl Gene ID'] == ensembl_id][
+            'Approved Symbol'].values[0]
+    except IndexError:
+        gene_name = None
+    return gene_name
+
+
+def get_name_from_synonyms(synonym):
+    """ Return Gene name given Synonym 
+
+    Parameter
+    ---------
+    synonym: str
+        Synonym
+
+    Return
+    ------
+    id: string
+       Gene Name/Symbol
+    """
+    df_map2 = df_map.replace([np.nan], 'nan')
+    try:
+        gene_name = df_map2[df_map2['Synonyms'].str.contains(
+            synonym)]['Approved Symbol'].values[0]
+    except IndexError:
+        gene_name = None
+    return gene_name
