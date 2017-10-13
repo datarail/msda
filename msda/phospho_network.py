@@ -6,6 +6,8 @@ import re
 import subprocess
 import mapping
 import os
+from msda import ptm_info as pi
+from msda import preprocessing as pr
 
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              'resources')
@@ -296,11 +298,12 @@ def construct_table(df_nt, dfc):
     df_nt['Motif'] = [m.upper() for m in df_nt['Motif'].tolist()]
     df_nt.index = ["%s_%s" % (g, s) for g, s in zip(df_nt.Gene_Symbol.tolist(),
                                                     df_nt.Site.tolist())]
-    df_kinase['SITE_+/-7_AA'] = [m[2:-2].upper()
-                                 for m in df_kinase['SITE_+/-7_AA'].tolist()]
+    dfk = df_kinase.copy()
+    dfk['SITE_+/-7_AA'] = [m[2:-2].upper()
+                           for m in dfk['SITE_+/-7_AA'].tolist()]
     df_clean = dfc.copy()
     df_clean.Motif = [m[1:-1] for m in df_clean.Motif.tolist()]
-    df_psp = df_kinase[df_kinase['SITE_+/-7_AA'].isin(df_clean.Motif.tolist())]
+    df_psp = dfk[dfk['SITE_+/-7_AA'].isin(df_clean.Motif.tolist())]
     print df_psp.head()
     df_psp = df_psp[df_psp.SUB_ACC_ID.isin(df_clean.Uniprot_Id.tolist())]
     df_psp['SUBSTRATE'] = [mapping.get_name_from_uniprot(id)
@@ -353,7 +356,7 @@ def generate_kinase_annotations(df, path2data):
     print "----------------------------------------------------"
 
     df_nt = pd.read_table(outfile)
-    df_nt = df_nt[df_nt['NetworKIN score'] >= 4]
+    df_nt = df_nt[df_nt['NetworKIN score'] >= 1]
     df_out = construct_table(df_nt, dfc)
 
     kin_table = '%skinase_substrate_table.csv' % path2data
@@ -367,3 +370,45 @@ def generate_kinase_annotations(df, path2data):
             f.write("%s\n" % line)
 
     return df_out
+
+
+def get_modifications_subset(df, types=['activity, induced',
+                                        'activity, inhibited',
+                                        'localization']):
+    """ Reutnrs subset of data containing phosphopeptides that are known to 
+    activate, inactivate, or change localization of protein
+    
+    Parameter:
+    ----------
+    df: dataframe
+       phospho mass spec data with identifiers as index
+    types: list of strings
+       types of modifications returned
+
+    Return:
+    -------
+    df: dataframe
+       subset of input dataframe pertaining to annnotated PTM's from PSP
+    """
+
+    proteins = df.Uniprot_Id.unique()
+    df_list = []
+    for type in types:
+        uids, sites, mod_type = [], [], []
+        for protein in proteins:
+            site_list = pi.get_modifications(protein, type)
+            uids += [protein]*len(site_list)
+            sites += site_list
+            mod_type += [type]*len(site_list)
+        genes = [mapping.get_name_from_uniprot(id) for id in uids]
+        df = pd.DataFrame(zip(uids, genes, sites, mod_type),
+                          columns=['Uniprot_Id', 'Gene_Symbol',
+                                   'Site', 'Modification_type'])
+        df = df[df.Site.str.contains('-p')]
+        df.index = ["%s_%s" % (g, s[:-2]) for g, s
+                    in zip(df.Gene_Symbol.tolist(), df.Site.tolist())]
+        df_list.append(df)
+    df = pd.concat(df_list, axis=1)
+    df = df.groupby(level=0, axis=1).apply(
+        lambda x: x.apply(pr.combine_duplicates, axis=1))
+    return df
