@@ -17,7 +17,7 @@ exSet <- ExpressionSet(assayData=exprs, phenoData=phenoData)
 test_str <- args[4]
 test_samples <- unlist(str_split(test_str, ","))
 ref_str <- args[5]
-ref_samples <- unlist(str_split(ref_str, ", "))
+ref_samples <- unlist(str_split(ref_str, ","))
 signature <- rowTtest(exSet, args[3], test_samples, ref_samples)
 
 signature <- (qnorm(signature$p.value/2, lower.tail=FALSE) * sign(signature$statistic))[, 1]
