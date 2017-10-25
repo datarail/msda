@@ -319,3 +319,14 @@ def merge_duplicate_features(df):
 
     df2 = df.groupby(df.index).mean()
     return df2
+
+
+def normalize_pMS_by_protein(dfp, dfm, samples):
+    dfp.index = dfp['Uniprot_Id'].tolist()
+    dfm.index = dfm['Uniprot_Id'].tolist()
+    dfm = dfm.loc[dfp.index.tolist()]
+    dfpn = dfp.copy()
+    dfpn[samples] = dfpn[samples].div(dfm[samples])
+    dfpn = dfpn.replace([np.inf], np.nan).dropna()
+    dfpn_scaled = process_raw.scale(dfpn, samples)
+    return dfpn_scaled
