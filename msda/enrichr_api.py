@@ -22,18 +22,43 @@ def prune_by_background(library, background):
 
 
 def get_enrichment(gene_list, library, background=None,
-                   output_file='gser'):
-    output_xml = '%s.xml' % output_file
+                   output_file='enrichr_output'):
+    """ Run Enrichr given gene list and library
+    
+    Parameter
+    ---------
+    gene_list: list
+        list of strings
+    library: str
+        Enrichr library without the file extension
+    background: Bool
+        True if library is to be pruned for platform background
+    output_xml: str
+    
+    Return
+    ------
+    df: pandas dataframe
+       dataframe containing enrichment results      
+ 
+    """
+    output_xml = "%s.xml" % output_file
+    msda_path = os.path.dirname(os.path.abspath(__file__))
+    enrichr_input_path = os.path.join(msda_path, 'enrichr_input.txt')
+    
+    with open(enrichr_input_path, 'wb') as f:
+        for gene in gene_list:
+            f.write("%s\n" % gene)
     if background:
         lib_list = prune_by_background(library, background)
-        with open('enrichr_libraries_bc/%s.txt' % library, 'wb') as f:
+        lib_path = os.path.join(msda_path, 'enrichr_libraries_bc')
+        with open('%s/%s.txt' % (lib_path, library), 'wb') as f:
             for term in lib_list:
-                f.write('%s\n' % term)
-        lib = 'enrichr_libraries_bc/%s.txt' % library
+                f.write('%s\n' % term)        
     else:
-        lib = 'enrichr_libraries/%s.txt' % library
-    subprocess.call(['java', '-jar', 'jars/enrichr.jar',
-                     gene_list, lib, output_xml])
+        lib_path = os.path.join(msda_path, 'enrichr_libraries')
+    lib = '%s/%s.txt' % (lib_path, library)    
+    subprocess.call(['java', '-jar', os.path.join(msda_path, 'jars/enrichr.jar'),
+                     enrichr_input_path, lib, output_xml])
     time.sleep(10)    
     if os.path.isfile('%s_%s.tsv' % (output_file, library)):
         df = pd.read_table('%s_%s.tsv' % (output_file, library))
