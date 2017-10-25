@@ -289,9 +289,12 @@ def split_sites(df):
 def construct_table(df_nt, dfc):
     col_rename = {'Target description': 'Gene_Symbol',
                   'Position': 'Site',
-                  'Kinase/Phosphatase/Phospho-binding domain description': 'KINASE',
+                  'Kinase/Phosphatase/Phospho-binding domain description':
+                  'KINASE',
                   'NetworKIN score': 'confidence',
-                  'Peptide sequence window': 'Motif'}
+                  'Peptide sequence window': 'Motif',
+                  'Kinase/Phosphatase/Phospho-binding domain STRING ID':
+                  'KINASE_Ensembl_ID'}
     df_nt = df_nt.rename(columns=col_rename)
     df_nt = df_nt[col_rename.values()]
     df_nt['Source'] = ['NetworKIN'] * len(df_nt)
@@ -312,6 +315,7 @@ def construct_table(df_nt, dfc):
                                     'SUB_MOD_RSD': 'Site',
                                     'SITE_+/-7_AA': 'Motif'})
     df_psp['confidence'] = [100] * len(df_psp)
+    df_psp['KINASE_Ensembl_ID'] = ['']*len(df_psp)
     df_psp = df_psp[col_rename.values()]
     df_psp['Source'] = ['PSP'] * len(df_psp)
     df_psp.index = ["%s_%s" % (g, s)
