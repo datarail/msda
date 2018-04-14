@@ -1,6 +1,12 @@
 # Proteomics analysis pipeline - LSP
 The proteomics analysis pipeline consists of a suite of tools that support the design and analysis of mass-spec based proteomics and phosphoproteomic measurements. In addition to custom scripts, the suite also incorporates pre-existing tools such as GSEA, VIPER and Hotnet in order to make network level inference of differential pathway activity.
 
+# Installation
+To install the Python dependencies of this package, run
+```bash
+pip install -r requirements.txt
+```
+
 # Using the pipeline
 In the first example below, a TMT-labeled mass spec dataset is merged with user-provided metadata.  In addition, all outdated identifiers (Uniprot Id, Gene name) are identified and updated. The metadata file should be a csv file containing a column 'TMT_label' that correspond with the columns (tmt tags) in the dataset, and a second column caled 'Sample' which is a user provided name for the sample. The metadata file may optionally also contain additional columns that describe other categorical features of the samples.
 ```python
