@@ -27,7 +27,7 @@ def normalize_within_batch(df, samples, control='Bridge'):
     for sample in true_samples:
         sample_mean = float(df.loc[:, sample].sum())
         nrm = bridge_mean / sample_mean
-        # print nrm
+        # print(nrm)
         df_norm_intra.loc[:, sample] = nrm * df_norm_intra.loc[:, sample]
     return df_norm_intra
 
@@ -102,7 +102,7 @@ def normalize_per_protein(df, df_refs, samples, control='Bridge'):
         else:
             nrm = protein_in_refset / protein_in_set
         # index = df_pr[df_pr.Uniprot_Id == protein].index.values[0]
-        #  print protein, protein_in_set, protein_in_refset
+        #  print(protein, protein_in_set, protein_in_refset)
         df_pr.loc[protein, samples] = nrm * df_pr.loc[protein, samples]
     return df_pr
 

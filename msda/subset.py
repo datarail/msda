@@ -113,7 +113,7 @@ def pfam_report(file):
         try:
             domain = get_pfam_domain(p, s)
         except IndexError:
-            print p, s
+            print(p, s)
         acc.append(domain[0])
         id.append(domain[1])
         start.append(domain[2])
@@ -176,7 +176,7 @@ def get_id(id, db_from, db_to='ACC'):
     try:
         name = re.split('\_', df.To[0])[0]
     except IndexError:
-        # print refseq
+        # print(refseq)
         name = 'not found'
     return name
 

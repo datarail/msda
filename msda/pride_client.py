@@ -19,7 +19,7 @@ def get_peptides(uniprot_id):
     projects = get_project_accession(uniprot_id)
     peptides = []
     for i, project in enumerate(projects):
-        print " processing project %s: %s..." % (i+1, project)
+        print(" processing project %s: %s..." % (i+1, project))
         assay_list = get_assay_accession(uniprot_id, project)
         for assay in assay_list:
             peptides += get_peptide_sequence(assay)

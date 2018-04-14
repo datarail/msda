@@ -307,7 +307,7 @@ def construct_table(df_nt, dfc):
     df_clean = dfc.copy()
     df_clean.Motif = [m[1:-1] for m in df_clean.Motif.tolist()]
     df_psp = dfk[dfk['SITE_+/-7_AA'].isin(df_clean.Motif.tolist())]
-    print df_psp.head()
+    print(df_psp.head())
     df_psp = df_psp[df_psp.SUB_ACC_ID.isin(df_clean.Uniprot_Id.tolist())]
     df_psp['SUBSTRATE'] = [mapping.get_name_from_uniprot(id)
                            for id in df_psp.SUB_ACC_ID.tolist()]
@@ -356,8 +356,8 @@ def generate_kinase_annotations(df, path2data):
 
     # run networkin prediction
     run_networkin(fasfile, resfile, outfile)
-    print "Running networkin algorithm. This may take 2+ hours"
-    print "----------------------------------------------------"
+    print("Running networkin algorithm. This may take 2+ hours")
+    print("----------------------------------------------------")
 
     df_nt = pd.read_table(outfile)
     df_nt = df_nt[df_nt['NetworKIN score'] >= 1]
