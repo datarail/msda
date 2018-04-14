@@ -1,8 +1,8 @@
 import pandas as pd
 import re
-from mapping import get_name_from_uniprot
+from msda.mapping import get_name_from_uniprot
 import numpy as np
-import batch_normalization as bn
+import msda.batch_normalization as bn
 import os
 from msda import process_raw
 

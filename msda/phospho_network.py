@@ -4,7 +4,7 @@ import requests
 import numpy as np
 import re
 import subprocess
-import mapping
+from msda import mapping
 import os
 from msda import ptm_info as pi
 from msda import preprocessing as pr
