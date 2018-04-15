@@ -10,16 +10,16 @@ df_map = pd.read_table(os.path.join(resource_path, 'hgnc_mapping.txt'))
 
 
 def get_uniprot_from_ensembl(ensp_id):
-    """ Return Uniprot ID given Ensembl Protein ID 
-    
-    Parameter
-    --------
-    ensp_id: string
+    """Return Uniprot ID given Ensembl Protein ID
+
+    Parameters
+    ----------
+    ensp_id : str
         Ensembl Protein ID
-    
-    Return
-    ------
-    uniprot_id: string
+
+    Returns
+    -------
+    uniprot_id : str
        Uniprot_Id
     """
     url = "http://grch37.rest.ensembl.org/xrefs/id/"
@@ -38,16 +38,16 @@ def get_uniprot_from_ensembl(ensp_id):
 
 
 def get_entrez_from_name(name):
-    """ Return Entrez Id given Gene Name
-    
-    Parameter
-    --------
-    name: string
+    """Return Entrez Id given Gene Name
+
+    Parameters
+    ----------
+    name : str
         Gene Name/Symbol
-    
-    Return
-    ------
-    id: int
+
+    Returns
+    -------
+    id : int
        Entrez ID
     """
     try:
@@ -59,16 +59,16 @@ def get_entrez_from_name(name):
 
 
 def get_name_from_entrez(entrez_id):
-    """ Return Gene name given Entrez ID 
-    
-    Parameter
-    ---------
-    entrez_id: int
+    """Return Gene name given Entrez ID
+
+    Parameters
+    ----------
+    entrez_id : int
         Entrez ID
-    
-    Return
-    ------
-    id: string
+
+    Returns
+    -------
+    id : str
        Gene Name/Symbol
     """
     try:
@@ -81,16 +81,16 @@ def get_name_from_entrez(entrez_id):
 
 
 def get_name_from_uniprot(uniprot_id):
-    """ Return Gene name given Uniport Id
-    
-    Parameter
-    ---------
-    uid: string
+    """Return Gene name given Uniport Id
+
+    Parameters
+    ----------
+    uid : str
        Uniprot ID
 
-    Return
-    ------
-    gene_name: string
+    Returns
+    -------
+    gene_name : str
        Gene Name/ Symbol
     """
     uniprot_id= uniprot_id.split('-')[0]
@@ -106,18 +106,18 @@ def get_name_from_uniprot(uniprot_id):
 
 
 def get_uniprot_from_name(gene_name):
-    """ Return Uniprot Id given Gene Name
-    
-    Parameter
-    ---------
-    gene_name: string
+    """Return Uniprot Id given Gene Name
+
+    Parameters
+    ----------
+    gene_name : str
        Gene Name/Symbol
 
-    Return
-    ------
-    uniprot_id: string
+    Returns
+    -------
+    uniprot_id : str
        Uniprot ID
-    """   
+    """ 
     try:
         uniprot_id = df_map[df_map['Approved Symbol'] == gene_name][
             'UniProt ID(supplied by UniProt)'].values[0]
@@ -129,16 +129,16 @@ def get_uniprot_from_name(gene_name):
 
 
 def get_name_from_ensembl(ensembl_id):
-    """ Return Gene name given Entrez ID 
-    
-    Parameter
-    ---------
-    ensembl_id: str
+    """Return Gene name given Entrez ID
+
+    Parameters
+    ----------
+    ensembl_id : str
         Ensembl ID
-    
-    Return
-    ------
-    id: string
+
+    Returns
+    -------
+    id : str
        Gene Name/Symbol
     """
     try:
@@ -150,16 +150,16 @@ def get_name_from_ensembl(ensembl_id):
 
 
 def get_name_from_synonyms(synonym):
-    """ Return Gene name given Synonym 
+    """Return Gene name given Synonym
 
-    Parameter
-    ---------
-    synonym: str
+    Parameters
+    ----------
+    synonym : str
         Synonym
 
-    Return
-    ------
-    id: string
+    Returns
+    -------
+    id : str
        Gene Name/Symbol
     """
     df_map2 = df_map.replace([np.nan], 'nan')
