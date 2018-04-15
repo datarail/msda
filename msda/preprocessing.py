@@ -221,14 +221,14 @@ def rename_bridge(df, batch_num):
     return df
 
 
-def merge_batches(dflist, meta_df, pMS=False, norm=False):
+def merge_batches(dflist, meta_df, pMS=False, norm=False, scale_value=100):
     df_list = []
     for df in dflist:
         # df = pd_import(file)
         if not pMS:
             df = df.drop_duplicates(['Uniprot_Id'])
         df, samples = rename_labels(df, meta_df, pMS)
-        df_scaled = process_raw.scale(df, samples)
+        df_scaled = process_raw.scale(df, samples, scale_value)
         # df.index = df.Uniprot_Id.tolist()
         # df = strip_metadata(df, samples)
         df_list.append(df_scaled)
@@ -321,12 +321,12 @@ def merge_duplicate_features(df):
     return df2
 
 
-def normalize_pMS_by_protein(dfp, dfm, samples):
+def normalize_pMS_by_protein(dfp, dfm, samples, scale_value=100):
     dfp.index = dfp['Uniprot_Id'].tolist()
     dfm.index = dfm['Uniprot_Id'].tolist()
     dfm = dfm.loc[dfp.index.tolist()]
     dfpn = dfp.copy()
     dfpn[samples] = dfpn[samples].div(dfm[samples])
     dfpn = dfpn.replace([np.inf], np.nan).dropna()
-    dfpn_scaled = process_raw.scale(dfpn, samples)
+    dfpn_scaled = process_raw.scale(dfpn, samples, scale_value)
     return dfpn_scaled
