@@ -24,15 +24,16 @@ df_mw_chart = pd.read_csv('../data/amino_acid_mw_chart.csv')
 
 
 def get_id(md_string):
-    """ Uniprot ID extracted from detailed identifiers in fasta file
-    Parameters:
-    ----------
-    md_string: string
+    """Uniprot ID extracted from detailed identifiers in fasta file
+
+    Parameters
+    -----------
+    md_string : str
       input string from fasta file with detailed identifier for each protein
-    
-    Return:
+
+    Returns
     -------
-    id: string
+    id : str
       extracted uniprot identifier
     """
     try:
@@ -44,17 +45,17 @@ def get_id(md_string):
 
 
 def get_mw(seq):
-    """ Calculate molecular weight of input amino acid sequence
+    """Calculate molecular weight of input amino acid sequence
 
-    Parameters:
+    Parameters
     ----------
-    seq: string
+    seq : str
        sequence of amino acids
 
-    Returns:
-    --------
-    mw_seq: int
-      moecular weight of sequence
+    Returns
+    -------
+    mw_seq : int
+      molecular weight of sequence
     """
 
     counter = collections.Counter(seq)
@@ -72,17 +73,17 @@ def get_mw(seq):
 
 
 def get_peptides(seq, amino_acid):
-    """ in silico digest of sequence given the site at which the enzyme cuts
+    """in silico digest of sequence given the site at which the enzyme cuts
 
-    Parameters:
-    -----------
-    seq: string
+    Parameters
+    ----------
+    seq : str
       sequence of amino acids
-    amino_acid: string
+    amino_acid : str
       one-letter code for site at which enzyme cleaves
 
-    Returns:
-    --------
+    Returns
+    -------
     r_peptides: list of strings
        list of petides resulting from in-silico digest
     """
@@ -102,15 +103,16 @@ def get_peptides(seq, amino_acid):
 
 
 def observable_peptides(seq):
-    """ in silico digest of amino acid sequence by trypsin that cuts at K and R
-    Parameters:
+    """in silico digest of amino acid sequence by trypsin that cuts at K and R
+
+    Parameters
     ----------
-    seq: string
+    seq : str
      sequence of amino acids
-    
-    Returns:
-    --------
-    rp_peptides: list of strings
+
+    Returns
+    -------
+    rp_peptides : list of strings
        list of tryptic peptides
     """
     try:
@@ -130,18 +132,18 @@ def observable_peptides(seq):
 
 
 def generate_report(file):
-    """ proteome fasta file is analyzed to calculate length, molecular weight
+    """proteome fasta file is analyzed to calculate length, molecular weight
     and number of tryptic peptides for all proteins
 
-    Parameters:
-    -----------
-    file: fasta file
-       file containing all protein sequences in the organism
+    Parameters
+    ----------
+    file : str
+       Path to fasta file containing all protein sequences in the organism
       (refer to resources/proteomes)
 
-    Returns:
-    --------
-    df: pandas dataframe
+    Returns
+    -------
+    df : pandas dataframe
       data table of protein identifier and corresponding mol weight
       and theoretical peptides
     """
@@ -167,20 +169,19 @@ def generate_report(file):
 
 
 def compute_ibaq_1sample(df, organism='human'):
-    """ IBAQ values computed for total intensities of all proteins
+    """IBAQ values computed for total intensities of all proteins
 
-    Parameters:
-    -----------
-    df: pandas dataframe
+    Parameters
+    ----------
+    df : pandas dataframe
        proteomics dataset with columns as samples and rows as proteins
-    organism: string
+    organism : str
        organism (human, rat, or mouse) to calibrate each protein
 
-    Returns:
+    Returns
     -------
-    df: pandas dataframe
+    df : pandas dataframe
        proteomics dataset normalized by IBAQ
-
     """
     ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
     df_ref = pd.read_csv(ref_file)
@@ -204,20 +205,19 @@ def compute_ibaq_1sample(df, organism='human'):
 
 
 def compute_ibaq_dataset(df, organism='human', samples=None):
-    """ IBAQ values computed for total intensities of all proteins
+    """IBAQ values computed for total intensities of all proteins
 
-    Parameters:
-    -----------
-    df: pandas dataframe
+    Parameters
+    ----------
+    df : pandas dataframe
        proteomics dataset with columns as samples and rows as proteins
-    organism: string
+    organism : str
        organism (human, rat, or mouse) to calibrate each protein
 
-    Returns:
+    Returns
     -------
-    df: pandas dataframe
+    df : pandas dataframe
        proteomics dataset normalized by IBAQ
-
     """
     ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
     df_ref = pd.read_csv(ref_file)
@@ -251,19 +251,20 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
 
 
 def ups2_regression(ups2_ibaq, ups2_conc):
-    """ Linear regression based on concentrations of ups2 standards 
-        and their ibaq values 
-    Parameters:
+    """Linear regression based on concentrations of ups2 standards 
+    and their ibaq values
+
+    Parameters
     ----------
-    ups2_ibaq: list of floats
+    ups2_ibaq : list of floats
        list of log10 ibaq values for UPS2 standards
-    ups2_ibaq: list of floats
+    ups2_ibaq : list of floats
        list of known concentrations (log10) for UPS2 standards
 
-    Return:
-    regr: tuple
+    Returns
+    -------
+    regr : tuple
       tuple of slope and intercept values
-    
     """
     ups2_ibaq = np.array(ups2_ibaq).reshape(len(ups2_ibaq), 1)
     ups2_conc = np.array(ups2_conc)
@@ -283,17 +284,18 @@ def ups2_regression(ups2_ibaq, ups2_conc):
 
 
 def bootstrap_regression(ups2_ibaq, ups2_conc):
-    """ Boostrap regression to get error values on regression parameters
-    
-    Parameters:
-    -----------
-    ups2_ibaq: list of floats
+    """Boostrap regression to get error values on regression parameters
+
+    Parameters
+    ----------
+    ups2_ibaq : list of floats
        list of ibaq values for UPS2 standards
-    ups2_ibaq: list of floats
+    ups2_ibaq : list of floats
        list of known concentrations for UPS2 standards
 
-    Return:
-    regr_list: list of tuples
+    Returns
+    -------
+    regr_list : list of tuples
        list of slope and intercept tuples for all run of the boostrap
      """
     ups2_ibaq = np.array(ups2_ibaq).reshape(len(ups2_ibaq), 1)
@@ -318,17 +320,16 @@ def bootstrap_regression(ups2_ibaq, ups2_conc):
 
 
 def get_mean_sd(regr_list):
-    """ Summary statistics on bootstrap_regression
+    """Summary statistics on bootstrap_regression
 
-    Parameters:
-    -----------
-    regr_list: list of tuples
+    Parameters
+    ----------
+    regr_list : list of tuples
 
-    Returns:
-    --------
-    tuple: 4-tuple of floats
+    Returns
+    -------
+    tuple : 4-tuple of floats
       mean and SD of slope and intercept
-
     """
     slope = [reg.coef_[0][0] for reg in regr_list]
     slope_mean = np.mean(slope)
@@ -340,19 +341,20 @@ def get_mean_sd(regr_list):
 
 
 def calibrate(df, slope, intercept):
-    """ Calibrate dataset based on UPS2 standards
-    Parameters:
-    -----------
-    df: pandas dataframe
+    """Calibrate dataset based on UPS2 standards
+
+    Parameters
+    ----------
+    df : pandas dataframe
       proteomics dataset normalized by IBAQ
-    slope: float
+    slope : float
       mean value of slope
-    intercept: flaot
+    intercept : flaot
       mean value of intercept
 
-    Returns:
+    Returns
     -------
-    df: Pandas dataframe
+    df : Pandas dataframe
       proteomics data calibrated by ups2 standards to get approximate
       concentrations for all proteins
     """
@@ -385,5 +387,3 @@ def ibaq_comparision(df_ibaq, samples, biomarkers,
     #              data=df3, hue="Label")
     #plt.savefig(plot_name, dpi=600)
     return df3
-    
-

@@ -22,13 +22,13 @@ df_networkin = pd.read_csv(os.path.join(
 
 def rename_columns(df):
     """ Rename columns so that they are standardized for further analysis
-    Parameter
-    ---------
-    df: pandas dataframe
+    Parameters
+    ----------
+    df : pandas dataframe
 
-    Return
-    ------
-    df: pandas dataframe
+    Returns
+    -------
+    df : pandas dataframe
     """
 
     df = df.rename(columns={'Protein Id': 'Uniprot_Id',
@@ -46,18 +46,19 @@ def rename_columns(df):
 def get_annotated_subset(df_input):
     """ splits dataframe into subsets based on whether the 
     phosphosites have upstream kinases
-    
-    Parameter
-    ---------
-    df_input: pandas dataframe
+
+    Parameters
+    ----------
+    df_input : pandas dataframe
        input dataframe with metadata for allphosphosites
 
-    Return:
-    df_annotated: pandas dataframe
-       dataframe of phosphoite metadata for which annotation are 
+    Returns
+    -------
+    df_annotated : pandas dataframe
+       dataframe of phosphoite metadata for which annotation are
        available on PSP and Networkin
 
-    df_unnannotated: pandas dataframe
+    df_unnannotated : pandas dataframe
        dataframe pf phosphosite metdata for which annotations are not available
     """
     df_input.Motif = [m[1:-1] for m in df_input.Motif.tolist()]
@@ -88,21 +89,22 @@ def generate_network(df_output):
 
 
 def generate_ksea_library(kin_sub_table, set_size=25):
-    """ generate custom kinase set library with kinases as terms and 
+    """ generate custom kinase set library with kinases as terms and
     corresponding target  (phosphoites) list
 
-    Parameter
-    ---------
-    kin_sub_table: csv file
-       csv file that maps phosphosites to upstream kinases 
+    Parameters
+    ----------
+    kin_sub_table : str
+       csv file that maps phosphosites to upstream kinases
        from PSP and Networkin
-    set_size: minimum size of kinase sets in the library
+    set_size : int
+        minimum size of kinase sets in the library
 
-    Return
-    ------
-    gene_sets: list of strings
-       each element in the list is a tab-separated entry of kinases 
-       and downstream sites 
+    Returns
+    -------
+    gene_sets : list of strings
+       each element in the list is a tab-separated entry of kinases
+       and downstream sites
     """
     df = pd.read_csv(kin_sub_table)
     all_kinases = list(set([m.upper() for m in df.KINASE.tolist()]))
@@ -125,21 +127,20 @@ def generate_substrate_fasta(df):
     all proteins that contain phosphosites that do not have kinase
     annotations in PSP or Networkin. The outputs of the function
     will be used as input to run Networkin locally and predict kinases
-   
-    Parameter
-    ---------
-    df: pandas dataframe
+
+    Parameters
+    ----------
+    df : pandas dataframe
        subset of phoproteomics data (metadata) that do
         not have kinase annotations
 
-    Return
-    ------
-    substrate_fasta: list of strings
+    Returns
+    -------
+    substrate_fasta : list of strings
        each pair of elements in the list is a uniprot id (eg: '>P01345')
        followed by the sequence
-    df2: pandas dataframe
+    df2 : pandas dataframe
        dataframe with uniprot id, amino acid and site of each phosphosite
-
     """
 
     substrate_fasta = []
@@ -174,17 +175,17 @@ def generate_substrate_fasta(df):
 def create_rnk_file(df_input):
     """ creates file of fold change values to be used as input for GSEA
 
-    Parameter
-    ---------
-    df_input: pandas dataframe
-       input dataframe that contains phosphoste metadata and 
-    fold change values (log2) of sample of interest
+    Parameters
+    ----------
+    df_input : pandas dataframe
+       input dataframe that contains phosphoste metadata and
+       fold change values (log2) of sample of interest
 
-    Return
-    ------
-    df_rnk: pandas dataframe
-       2-column dataframe of psp identifier (uniprotId_site) and 
-    corresponding fold change value
+    Returns
+    -------
+    df_rnk : pandas dataframe
+       2-column dataframe of psp identifier (uniprotId_site) and
+       corresponding fold change value
     """
     fc = df_input.fc.tolist()
     gene = [str(g).upper() for g in df_input.Gene_Symbol.tolist()]
@@ -199,18 +200,16 @@ def create_rnk_file(df_input):
 
 def run_networkin(fasfile, psitefile, outfile):
     """ run Networkin locally to generate kinase prediction
-    Parameter:
+
+    Parameters
     ----------
-    fastafile: str
+    fastafile : str
         path for sequence file (.fas) of all subtrates with unnanotated sites
-    psitefile: str
-        path for file (.res) with tab seperated values 
+    psitefile : str
+        path for file (.res) with tab seperated values
         of uniprot_id, amino acid and site
-    outfile: str
+    outfile : str
         path for output file with Networkin predictions
-    
-    Return
-    ------
     """
     f = open(outfile, 'wb')
     subprocess.call([os.path.join(resource_path, 'NetworKIN_release3.0/NetworKIN.py'),
@@ -222,18 +221,19 @@ def run_networkin(fasfile, psitefile, outfile):
 
 def get_fc(df_input, samples, base_sample):
     """ compute fold change of samples relative to control
-    Parameter
-    ---------
-    df_input: pandas dataframe
+
+    Parameters
+    ----------
+    df_input : pandas dataframe
         phosphoproteomics dataset
-    sample: list of str
+    sample : list of str
        sample names
-    base_sample:str
+    base_sample : str
        sample that serves as control
 
-    Return
-    ------
-    df: pandas dataframe
+    Returns
+    -------
+    df : pandas dataframe
        samples normalized by base_sample
     """
     df = df_input[samples].div(df_input[base_sample], axis=0)
@@ -328,18 +328,18 @@ def construct_table(df_nt, dfc):
 def generate_kinase_annotations(df, path2data):
     """ Run networkin algorithm and lookup PSP to
         generate kinase-substrate library sets
-    
-    Parameter
-    ---------
-    df: pandas dataframe
-       phosphoproteomics dataset 
-    path2data: str
+
+    Parameters
+    ----------
+    df : pandas dataframe
+       phosphoproteomics dataset
+    path2data : str
        local path to save annotation files generated
 
 
-    Return
-    ------
-    df_out: pandas dataframe
+    Returns
+    -------
+    df_out : pandas dataframe
        longtable of kinase annotatiosn from PSP and NetworKin
     """
     dfc = split_sites(df)
@@ -379,19 +379,19 @@ def generate_kinase_annotations(df, path2data):
 def get_modifications_subset(df, types=['activity, induced',
                                         'activity, inhibited',
                                         'localization']):
-    """ Reutnrs subset of data containing phosphopeptides that are known to 
+    """Return subset of data containing phosphopeptides that are known to
     activate, inactivate, or change localization of protein
-    
-    Parameter:
+
+    Parameters
     ----------
-    df: dataframe
+    df : dataframe
        phospho mass spec data with identifiers as index
-    types: list of strings
+    types : list of strings
        types of modifications returned
 
-    Return:
-    -------
-    df: dataframe
+    Returns
+    --------
+    df : dataframe
        subset of input dataframe pertaining to annnotated PTM's from PSP
     """
 
