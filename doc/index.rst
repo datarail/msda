@@ -1,15 +1,9 @@
-.. msda documentation master file, created by
-   sphinx-quickstart on Sat Apr 14 21:55:49 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Mass Spec Data Analysis Pipeline (:py:mod:`msda`)
+=================================================
 
-Welcome to msda's documentation!
-================================
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
+.. automodule:: msda
+    :members:
+    :show-inheritance:
 
 
 Indices and tables
