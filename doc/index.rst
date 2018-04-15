@@ -1,10 +1,10 @@
 Mass Spec Data Analysis Pipeline (:py:mod:`msda`)
 =================================================
 
-.. automodule:: msda
-    :members:
-    :show-inheritance:
+.. toctree::
+    :maxdepth: 3
 
+    modules/index
 
 Indices and tables
 ==================
