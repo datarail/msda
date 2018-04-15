@@ -50,9 +50,25 @@ def normalize(df, nrm_list):
     return df2
 
 
-def scale(df, samples):
+def scale(df, samples, norm_value=100):
+    """Return copy of dataframe with a set of columns normalized
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        The data frame to be normalized
+    samples : list of str
+        Column identifiers to use for indexing the data frame
+    norm_value : Optional[float]
+        The value to normalize the selected samples to, default: 100
+
+    Returns
+    -------
+    df2 : pandas dataframe
+        The data frame with the given columns normalized to the given value
+    """
     df2 = df.copy()
     df2[samples] = df2[samples].div(df2[samples].sum(axis=1),
                                     axis=0)
-    df2[samples] = df2[samples].multiply(100)
+    df2[samples] = df2[samples].multiply(norm_value)
     return df2
