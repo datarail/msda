@@ -3,18 +3,18 @@ import numpy as np
 
 
 def normalize_within_batch(df, samples, control='Bridge'):
-    """ Function normalizes sample in each batch by Bridge
+    """Function normalizes sample in each batch by Bridge
 
     Parameters
     ----------
-    df: pandas dataframe
+    df : pandas dataframe
         dataframe corresponding to mass spec results of one batch
-    samples: list[str]
+    samples : list[str]
         list of sample names
 
     Returns
     -------
-    df_norm_intra: pandas dataframe
+    df_norm_intra : pandas dataframe
        dataframe corresponding to mass spec results of one batch
        normalized by its bridge sample
     """
@@ -33,22 +33,21 @@ def normalize_within_batch(df, samples, control='Bridge'):
 
 
 def normalize_between_batches(df, df_ref, samples, control='Bridge'):
-    """ Function normalizes samples across batches by ratio
-        of Bridge samples
+    """Function normalizes samples across batches by ratio of Bridge samples
 
     Parameters
     ----------
-    df: pandas dataframe
+    df : pandas dataframe
         dataframe corresponding to mass spec results of one batch
         that is already been normalzied wrt its bridge
-    df_ref: pandas dataframe
+    df_ref : pandas dataframe
         dataframe whose Bridge serves as primary normalizer
-    samples: list[str]
+    samples : list[str]
         list of sample names
 
     Returns
     -------
-    df_norm_inter: pandas dataframe
+    df_norm_inter : pandas dataframe
        dataframe corresponding to mass spec results of one batch
        normalized by its ratio of bridge samples across batches
     """

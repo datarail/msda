@@ -13,20 +13,20 @@ import py2cytoscape.cytoscapejs as renderer
 
 
 def get_pathsbetween(source_list, filter=False):
-    """ Pahway commons client that retuens interactinos between
+    """Pathway commons client that returns interactinos between
     genes in extended binary SIF format
 
     Parameters
     ----------
-    source_list: list
-             list of gene names
-    filter: Boolean variable
-           Set to TRUE to filter only those interactions that have the
-    query genes as substrate and product
+    source_list : list
+        list of gene names
+    filter : bool
+        Set to TRUE to filter only those interactions that have the
+        query genes as substrate and product
 
     Returns
     -------
-    df: dataframe
+    df : dataframe
         dataframe of interactions and supporting evidence
     """
     base_url = 'http://www.pathwaycommons.org/pc2/graph'
@@ -45,22 +45,23 @@ def get_pathsbetween(source_list, filter=False):
 
 
 def make_network_plot(weights_file, network_file, figure_file, subsets=None):
-    """ Plots pathway commons network
+    """Plots pathway commons network
+
     Parameters
     ----------
-    weights_file: str
-           path to file that contains 2-columns (genes and weights)
-    network_file: str
-           path to which output dataframe has to be saved
-    figure_file: str
-           path to which network figure is to be saved
-    subsets: list
-           list of gene names
+    weights_file : str
+        path to file that contains 2-columns (genes and weights)
+    network_file : str
+        path to which output dataframe has to be saved
+    figure_file : str
+        path to which network figure is to be saved
+    subsets : list
+        list of gene names
 
     Return
     ------
     df2: dataframe
-         3-colum dataframe
+        3-colum dataframe
 
     """
     df = pd.read_csv(weights_file, sep='\t')
@@ -77,14 +78,14 @@ def make_network_plot(weights_file, network_file, figure_file, subsets=None):
 
 
 def make_cytoscpe_plot(df_sif, weights_file):
-    """ provide sif file and weights of nodes to launch and
+    """Provide sif file and weights of nodes to launch and
     generate directed cytoscape network
 
     Parameters
     ----------
-    df_sif: pandas dataframe
+    df_sif : pandas dataframe
          sif file (can contain additional metadata on edge annotations)
-    weights_file: string
+    weights_file : str
         path to 2-column file of node weights
     """
     # Useful documentation
@@ -181,9 +182,3 @@ def make_cytoscpe_plot(df_sif, weights_file):
                                           col_type='String',
                                           vp='EDGE_SOURCE_ARROW_SHAPE',
                                           mappings=edge_shape_map2)
-
-
-
-    
-
-
