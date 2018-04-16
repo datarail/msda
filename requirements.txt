@@ -1,0 +1,11 @@
+requests
+matplotlib
+networkx
+numpy
+scipy
+pandas
+seaborn
+statsmodels
+scikit_learn
+py2cytoscape
+mygene
