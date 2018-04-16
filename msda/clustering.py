@@ -212,16 +212,16 @@ def number_duplicates(samples):
 def plot_clustermap(df, output_path, cmap=None, legend_label='',
                     z_score=None, xticklabels=False, yticklabels=True,
                     colors_dict=None, col_colors=None, row_colors=None):
-    """ make clustermap figure
+    """Make clustermap figure
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     df
     df_meta
     output_path
 
-    Return
-    ------
+    Returns
+    -------
     cg
     """
 

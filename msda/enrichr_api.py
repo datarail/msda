@@ -23,28 +23,27 @@ def prune_by_background(library, background):
 
 def get_enrichment(gene_list, library, background=None,
                    output_file='enrichr_output'):
-    """ Run Enrichr given gene list and library
-    
-    Parameter
-    ---------
-    gene_list: list
+    """Run Enrichr given gene list and library
+
+    Parameters
+    ----------
+    gene_list : list
         list of strings
-    library: str
+    library : str
         Enrichr library without the file extension
-    background: Bool
+    background : bool
         True if library is to be pruned for platform background
-    output_xml: str
-    
-    Return
-    ------
-    df: pandas dataframe
-       dataframe containing enrichment results      
- 
+    output_xml : str
+
+    Returns
+    -------
+    df : pandas dataframe
+       dataframe containing enrichment results
     """
     output_xml = "%s.xml" % output_file
     msda_path = os.path.dirname(os.path.abspath(__file__))
     enrichr_input_path = os.path.join(msda_path, 'enrichr_input.txt')
-    
+
     with open(enrichr_input_path, 'wb') as f:
         for gene in gene_list:
             f.write("%s\n" % gene)
