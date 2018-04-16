@@ -349,7 +349,7 @@ def calibrate(df, slope, intercept):
       proteomics dataset normalized by IBAQ
     slope : float
       mean value of slope
-    intercept : flaot
+    intercept : float
       mean value of intercept
 
     Returns
