@@ -39,7 +39,7 @@ def get_id(md_string):
         id = md_string.strip().split('|')[1]
     except IndexError:
         id = md_string
-        print id
+        print(id)
     return id
 
 
@@ -65,7 +65,7 @@ def get_mw(seq):
                                                  == aa].values[0]
             mw_seq += mw_aa * counter[aa]
         except IndexError:
-            print aa
+            print(aa)
     mw_seq -= 18.015 * (len(seq) - 1)
     mw_seq = mw_seq * 0.001
     return mw_seq
@@ -379,7 +379,7 @@ def ibaq_comparision(df_ibaq, samples, biomarkers,
         for id in range(len(df3)):
             sample = df3['variable'].iloc[id]
             labels.append(sample_map[sample])
-        print len(labels)    
+        print(len(labels))    
         df3['Label'] = labels        
     #sns.stripplot(x="Gene_Symbol", y="log10(iBAQ)",
     #              data=df3, hue="Label")

@@ -241,7 +241,7 @@ def construct_motif(uid, site):
             subseq = 'obsolete'
         return subseq
     except UnicodeEncodeError:
-        print uid, site
+        print(uid, site)
         subseq = 'obsolote'
         return subseq
 
@@ -261,7 +261,7 @@ def get_seq(uid):
         seq_all = str(r.text)
         seq = ''.join(seq_all.strip().split('\n')[1:])
     except UnicodeEncodeError:
-        print uid
+        print(uid)
         seq = 'unknown'
     return seq
 

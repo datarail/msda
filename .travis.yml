@@ -1,6 +1,7 @@
 language: python
 python:
   - "2.7"
+  - "3.6"
 sudo: false
 dist: trusty
 install: pip install numpy scipy matplotlib pandas seaborn scikit_learn requests pytest
