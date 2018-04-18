@@ -4,6 +4,8 @@ import pandas as pd
 from itertools import chain
 import os
 import numpy as np
+from msda import enrichr_api as ai
+import matplotlib.pyplot as plt
 
 
 def construct_color_dict(labels, scheme="husl"):
@@ -58,3 +60,42 @@ def plot_clustermap(df_fc, dfm, yticklabels=False):
         cg.ax_col_dendrogram.bar(0, 0, color=color_dict[label],
                                  label=label, linewidth=0)
     cg.ax_col_dendrogram.legend(loc=(-0.6, -2), ncol=1)
+    return cg
+
+
+def get_enriched_gene_list(df, cg, start, end):
+    genes = df.index.tolist()
+    reordered_ind = cg.dendrogram_row.reordered_ind
+    reordered_genes = [genes[i] for i in reordered_ind]
+    start_index = reordered_genes.index(start)
+    end_index = reordered_genes.index(end) + 1
+    gene_list = reordered_genes[start_index:end_index]
+    return gene_list
+
+
+def get_cmap_sig(gene_list):
+    genes = [x for x in gene_list if x is not None]
+    library = 'LINCS_L1000_Chem_Pert_down'
+    dfe = ai.get_enrichment(genes, library)
+    dfe = dfe[dfe['Adjusted P-value'] < 0.2]
+    return dfe
+
+
+def plot_cmap_sig(dfe):
+    terms = []
+    for t in dfe.Term.tolist():
+        try:
+            terms.append(t.split('-')[1])
+        except IndexError:
+            terms.append(t)
+    pvals = [-np.log10(pv) for pv in dfe['Adjusted P-value']]
+    dfp = pd.DataFrame(list(zip(terms, pvals)),
+                       columns=['drug', '-log10(p-value)'])
+    dfp2 = dfp[:10].copy()
+    plt.barh(dfp2.index, dfp2['-log10(p-value)'], align='center')
+    plt.yticks(dfp2.index, dfp2.drug)
+    plt.gca().invert_yaxis()
+    plt.subplots_adjust(left=0.2)
+    plt.xlabel('False Discovery Rate')
+    plt.title('L1000 drug_pert_down signature')
+    return dfp
