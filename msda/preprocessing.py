@@ -1,8 +1,8 @@
 import pandas as pd
 import re
-from mapping import get_name_from_uniprot
+from msda import mapping
 import numpy as np
-import batch_normalization as bn
+from msda import batch_normalization as bn
 import os
 from msda import process_raw
 
@@ -12,6 +12,7 @@ df_map = pd.read_csv(os.path.join(resource_path, 'Uniprot_sec_to_prim.csv'),
                      sep='\t')
 
 delac_tr = ['C9JYP6', 'Q7Z469']
+
 
 def read_dataset(file):
     """ read dataset into a pandas dataframe
@@ -38,7 +39,8 @@ def read_dataset(file):
 def verify_column_labels(df, pMS=False):
     columns = df.columns.tolist()
     standard_labels = ['Uniprot_Id', 'Gene_Symbol']
-    phospho_labels = ['Max_Score', 'Site_Position', 'Motif']
+    max_score_cols = [s for s in df.columns.tolist() if 'Max_Score' in s]
+    phospho_labels = max_score_cols + ['Site_Position', 'Motif']
     assert set(standard_labels) < set(columns), "Uniport_Id and Gene_Symbol are expected column labels"
     if pMS:
         assert set(phospho_labels) < set(columns), "Max_Score, Site_position and Motif are expected columns in phosphoproteomics datasets"
@@ -73,7 +75,7 @@ def correct_gene_names(df):
     update_symbols = []
     for i, gs in enumerate(df.Gene_Symbol):
         if (not (isinstance(gs, str))) or (':' in gs):
-            update_symbols.append(get_name_from_uniprot(df.Uniprot_Id.iloc[i]))
+            update_symbols.append(mapping.get_name_from_uniprot(df.Uniprot_Id.iloc[i]))
         else:
             update_symbols.append(gs)
     df.Gene_Symbol = update_symbols
@@ -203,8 +205,9 @@ def rename_labels(df, meta_df, pMS=False):
     df = df.rename(columns=sample_key)
     df_samples = [s for s in df.columns.tolist() if s in samples]
     if pMS:
+        max_score_cols = [s for s in df.columns.tolist() if 'Max_Score' in s]
         metadata_cols = ['Uniprot_Id', 'Gene_Symbol', 'Motif',
-                         'Site_Position', 'Max_Score']
+                         'Site_Position'] + max_score_cols
         cols = metadata_cols + df_samples
     else:
         cols = ['Gene_Symbol'] + df_samples
