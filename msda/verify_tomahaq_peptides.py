@@ -1,6 +1,6 @@
 import re
 import pandas as pd
-import phosphosite_client as pc
+import msda.phosphosite_client as pc
 import requests
 
 

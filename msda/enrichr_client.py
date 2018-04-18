@@ -40,5 +40,5 @@ def get_enrichment_result(data, library='KEGG_2015'):
         df = pd.DataFrame(body, columns=header)
         return df
     except AssertionError:
-        print data['job_name']
+        print(data['job_name'])
      #return df

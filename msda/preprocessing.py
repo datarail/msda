@@ -15,16 +15,16 @@ delac_tr = ['C9JYP6', 'Q7Z469']
 
 
 def read_dataset(file):
-    """ read dataset into a pandas dataframe
+    """Read dataset into a pandas dataframe
+
     Parameters
     ----------
-    file: string
+    file : str
 
-    Return
-    ------
-    df: pandas dataframe
-    """ 
-    
+    Returns
+    -------
+    df : pandas dataframe
+    """
     if file.endswith('.xlsx'):
         df = pd.read_excel(file)
     elif file.endswith('.csv'):
@@ -115,19 +115,19 @@ def correct_uniprot_identifiers(df):
 
     
 def preprocess_dataset(file, pMS=False):
-    """ Dataset is preprocessed to correct for outdated UniProt Identifiers, 
+    """Dataset is preprocessed to correct for outdated UniProt Identifiers, 
     datetime errors in gene name, and human contaminant proteins.
-    Parameter
-    --------
-    file: string/ pandas dataframe
-    pMS: boolean True/False
+
+    Parameters
+    ----------
+    file : str or pandas dataframe
+    pMS : bool
         If True, dataset is a phosphorpoteomics dataset
 
-    Return
-    ------
-    df: pandas datframe
+    Returns
+    -------
+    df : pandas datframe
     """
-    
     if isinstance(file, pd.DataFrame):
         df = file.copy()
     else:
@@ -224,14 +224,14 @@ def rename_bridge(df, batch_num):
     return df
 
 
-def merge_batches(dflist, meta_df, pMS=False, norm=False):
+def merge_batches(dflist, meta_df, pMS=False, norm=False, scale_value=100):
     df_list = []
     for df in dflist:
         # df = pd_import(file)
         if not pMS:
             df = df.drop_duplicates(['Uniprot_Id'])
         df, samples = rename_labels(df, meta_df, pMS)
-        df_scaled = process_raw.scale(df, samples)
+        df_scaled = process_raw.scale(df, samples, scale_value)
         # df.index = df.Uniprot_Id.tolist()
         # df = strip_metadata(df, samples)
         df_list.append(df_scaled)
@@ -324,12 +324,12 @@ def merge_duplicate_features(df):
     return df2
 
 
-def normalize_pMS_by_protein(dfp, dfm, samples):
+def normalize_pMS_by_protein(dfp, dfm, samples, scale_value=100):
     dfp.index = dfp['Uniprot_Id'].tolist()
     dfm.index = dfm['Uniprot_Id'].tolist()
     dfm = dfm.loc[dfp.index.tolist()]
     dfpn = dfp.copy()
     dfpn[samples] = dfpn[samples].div(dfm[samples])
     dfpn = dfpn.replace([np.inf], np.nan).dropna()
-    dfpn_scaled = process_raw.scale(dfpn, samples)
+    dfpn_scaled = process_raw.scale(dfpn, samples, scale_value)
     return dfpn_scaled

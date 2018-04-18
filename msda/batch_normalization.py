@@ -3,18 +3,18 @@ import numpy as np
 
 
 def normalize_within_batch(df, samples, control='Bridge'):
-    """ Function normalizes sample in each batch by Bridge
+    """Function normalizes sample in each batch by Bridge
 
     Parameters
     ----------
-    df: pandas dataframe
+    df : pandas dataframe
         dataframe corresponding to mass spec results of one batch
-    samples: list[str]
+    samples : list[str]
         list of sample names
 
     Returns
     -------
-    df_norm_intra: pandas dataframe
+    df_norm_intra : pandas dataframe
        dataframe corresponding to mass spec results of one batch
        normalized by its bridge sample
     """
@@ -27,28 +27,27 @@ def normalize_within_batch(df, samples, control='Bridge'):
     for sample in true_samples:
         sample_mean = float(df.loc[:, sample].sum())
         nrm = bridge_mean / sample_mean
-        # print nrm
+        # print(nrm)
         df_norm_intra.loc[:, sample] = nrm * df_norm_intra.loc[:, sample]
     return df_norm_intra
 
 
 def normalize_between_batches(df, df_ref, samples, control='Bridge'):
-    """ Function normalizes samples across batches by ratio
-        of Bridge samples
+    """Function normalizes samples across batches by ratio of Bridge samples
 
     Parameters
     ----------
-    df: pandas dataframe
+    df : pandas dataframe
         dataframe corresponding to mass spec results of one batch
         that is already been normalzied wrt its bridge
-    df_ref: pandas dataframe
+    df_ref : pandas dataframe
         dataframe whose Bridge serves as primary normalizer
-    samples: list[str]
+    samples : list[str]
         list of sample names
 
     Returns
     -------
-    df_norm_inter: pandas dataframe
+    df_norm_inter : pandas dataframe
        dataframe corresponding to mass spec results of one batch
        normalized by its ratio of bridge samples across batches
     """
@@ -102,7 +101,7 @@ def normalize_per_protein(df, df_refs, samples, control='Bridge'):
         else:
             nrm = protein_in_refset / protein_in_set
         # index = df_pr[df_pr.Uniprot_Id == protein].index.values[0]
-        #  print protein, protein_in_set, protein_in_refset
+        #  print(protein, protein_in_set, protein_in_refset)
         df_pr.loc[protein, samples] = nrm * df_pr.loc[protein, samples]
     return df_pr
 

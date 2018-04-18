@@ -4,22 +4,22 @@ base_url = "http://www.ebi.ac.uk:80/pride/ws/archive/"
 
 
 def get_peptides(uniprot_id):
-    """ main function that returns peptide list for given uniprot id
+    """Main function that returns peptide list for given uniprot id
 
     Parameters
     ----------
-    uniprot_id: str
-              The uniprto id to be processed
+    uniprot_id : str
+        The uniprot id to be processed
 
     Returns
     -------
-    peptide_list: list
-               list of peptide sequences
+    peptide_list : list
+        list of peptide sequences
     """
     projects = get_project_accession(uniprot_id)
     peptides = []
     for i, project in enumerate(projects):
-        print " processing project %s: %s..." % (i+1, project)
+        print(" processing project %s: %s..." % (i+1, project))
         assay_list = get_assay_accession(uniprot_id, project)
         for assay in assay_list:
             peptides += get_peptide_sequence(assay)
@@ -37,14 +37,13 @@ def get_project_accession(uniprot_id):
     Parameters
     ----------
     uniprot_id : str
-               The uniprot id to be processed
+        The uniprot id to be processed
 
     Returns
     -------
-    project_list: list
-           the list of projects containing peptides for the query uniprot id
-    """
-    
+    project_list : list
+        the list of projects containing peptides for the query uniprot id
+    """ 
     params = {'query': uniprot_id,
               'show': '10000',
               'page': '0',
@@ -62,16 +61,16 @@ def get_project_accession(uniprot_id):
 def get_assay_accession(uniprot_id, project_accession):
     """Send query to PRIDE API for assay ids
 
-    Parameter
-    ---------
-    uniprot_id: str
-              The uniprot_id to be queried
-    project_accession: str
-              The project id containing peptides for the above uniprot id
+    Parameters
+    ----------
+    uniprot_id : str
+        The uniprot_id to be queried
+    project_accession : str
+        The project id containing peptides for the above uniprot id
 
     Returns
     -------
-    assay_list: list
+    assay_list : list
          list of two tuple of protein alias and assay id
     """
     query_string = "protein/list/project/%s/protein/%s" % (
@@ -86,14 +85,14 @@ def get_assay_accession(uniprot_id, project_accession):
 def get_peptide_sequence(assay_accession):
     """Send query to PRIDE api for peptide sequence
 
-    Parameter
-    ---------
-    assay_accesion: tuple
+    Parameters
+    ----------
+    assay_accesion : tuple
          Two tuple of protein_alias and assay id
 
     Returns
     -------
-    peptide_seq_list: list
+    peptide_seq_list : list
          list of peptide sequence
     """
     count_query = "peptide/count/assay/%s" % assay_accession[0]

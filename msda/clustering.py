@@ -80,7 +80,7 @@ def plot_pca(X_pca, explained_variance, samples,
     if not labels:
         plt.scatter(Xs_pca[:, 0], Xs_pca[:, 1], alpha=0.5, s=20)
     elif labels:
-        for lab, col in labels.iteritems():
+        for lab, col in labels.items():
             plt.scatter(Xs_pca[y == lab, 0], Xs_pca[y == lab, 1],
                         label=lab, color=col)
     # texts = []
@@ -212,16 +212,16 @@ def number_duplicates(samples):
 def plot_clustermap(df, output_path, cmap=None, legend_label='',
                     z_score=None, xticklabels=False, yticklabels=True,
                     colors_dict=None, col_colors=None, row_colors=None):
-    """ make clustermap figure
+    """Make clustermap figure
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     df
     df_meta
     output_path
 
-    Return
-    ------
+    Returns
+    -------
     cg
     """
 
