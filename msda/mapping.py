@@ -138,7 +138,7 @@ def get_name_from_ensembl(ensembl_id):
     
     Return
     ------
-    id: string
+    gene_name: string
        Gene Name/Symbol
     """
     try:
@@ -159,7 +159,7 @@ def get_name_from_synonyms(synonym):
 
     Return
     ------
-    id: string
+    gene_name: string
        Gene Name/Symbol
     """
     df_map2 = df_map.replace([np.nan], 'nan')
@@ -169,3 +169,27 @@ def get_name_from_synonyms(synonym):
     except IndexError:
         gene_name = None
     return gene_name
+
+
+def get_entrez_from_ensembl(ensembl_id):
+    """ Return Gene name given Entrez ID 
+    
+    Parameter
+    ---------
+    ensembl_id: str
+        Ensembl ID
+    
+    Return
+    ------
+    entrez_id: string
+       Entrez ID
+    """
+    try:
+        entrez_id = df_map[df_map['Ensembl Gene ID'] == ensembl_id][
+             'Entrez Gene ID'].values[0]
+        entrez_id = int(entrez_id)
+    except IndexError:
+        entrez_id = None
+    except ValueError:
+        entrez_id = None
+    return entrez_id
