@@ -164,9 +164,10 @@ def generate_substrate_fasta(df):
             pos.append(site[1:])
         except AttributeError:
             obsolete_entries.append(substrate)
-    df2 = pd.DataFrame(zip(ids, pos, aa))
+    df2 = pd.DataFrame(list(zip(ids, pos, aa)))
     if obsolete_entries:
-        with open(os.path.join(resource_path, 'obsolete_entries.txt'), 'ab') as f:
+        with open(os.path.join(resource_path,
+                               'obsolete_entries.txt'), 'a') as f:
             for s in list(set(obsolete_entries)):
                 f.write("%s\n" % s)
     return substrate_fasta, df2
@@ -193,7 +194,7 @@ def create_rnk_file(df_input):
     ty = [m[0].upper() for m in df_input.type.tolist()]
 
     id = ["%s_%s_%s" % (g, s, t) for g, s, t in zip(gene, site, ty)]
-    df_rnk = pd.DataFrame(zip(id, fc), columns=('ps_id', 'fc'))
+    df_rnk = pd.DataFrame(list(zip(id, fc)), columns=('ps_id', 'fc'))
     df_rnk = df_rnk.sort(['fc'], ascending=True)
     return df_rnk
 
@@ -271,7 +272,8 @@ def split_sites(df):
     del df['Motif']
     del df['Max_Score']
     del df['Site_Position']
-    dfe = pd.DataFrame(zip(motif, max_score, sp), index=sp.index.tolist(),
+    dfe = pd.DataFrame(list(zip(motif, max_score, sp)),
+                       index=sp.index.tolist(),
                        columns=[motif.name, max_score.name, sp.name])
     dfe['Site'] = ["%s%s" % (m[6], s) for m, s in zip(dfe.Motif.tolist(),
                                                       dfe.Site_Position.tolist())]
@@ -296,7 +298,7 @@ def construct_table(df_nt, dfc):
                   'Kinase/Phosphatase/Phospho-binding domain STRING ID':
                   'KINASE_Ensembl_ID'}
     df_nt = df_nt.rename(columns=col_rename)
-    df_nt = df_nt[col_rename.values()]
+    df_nt = df_nt[list(col_rename.values())]
     df_nt['Source'] = ['NetworKIN'] * len(df_nt)
     df_nt['Motif'] = [m.upper() for m in df_nt['Motif'].tolist()]
     df_nt.index = ["%s_%s" % (g, s) for g, s in zip(df_nt.Gene_Symbol.tolist(),
@@ -316,7 +318,7 @@ def construct_table(df_nt, dfc):
                                     'SITE_+/-7_AA': 'Motif'})
     df_psp['confidence'] = [100] * len(df_psp)
     df_psp['KINASE_Ensembl_ID'] = ['']*len(df_psp)
-    df_psp = df_psp[col_rename.values()]
+    df_psp = df_psp[list(col_rename.values())]
     df_psp['Source'] = ['PSP'] * len(df_psp)
     df_psp.index = ["%s_%s" % (g, s)
                     for g, s in zip(df_psp.Gene_Symbol.tolist(),
@@ -342,6 +344,11 @@ def generate_kinase_annotations(df, path2data):
     df_out : pandas dataframe
        longtable of kinase annotatiosn from PSP and NetworKin
     """
+    try:
+        df['Uniprot_Id'] = [s.split('|')[1]
+                            for s in df.Uniprot_Id.tolist()]
+    except IndexError:
+        pass
     dfc = split_sites(df)
     subf, df_res = generate_substrate_fasta(dfc)
 
@@ -349,7 +356,7 @@ def generate_kinase_annotations(df, path2data):
     resfile = '%spsite.res' % path2data
     outfile = '%sNetwork_predictions.txt' % path2data
 
-    with open(fasfile, 'wb') as f:
+    with open(fasfile, 'w') as f:
         for line in subf:
             f.write(line)
     df_res.to_csv(resfile, index=False, sep='\t')
@@ -369,7 +376,7 @@ def generate_kinase_annotations(df, path2data):
     ksets = generate_ksea_library(kin_table, set_size=25)
     library = '%sksea_library' % path2data
 
-    with open("%s.gmt" % library, 'wb') as f:
+    with open("%s.gmt" % library, 'w') as f:
         for line in ksets:
             f.write("%s\n" % line)
 
@@ -405,7 +412,7 @@ def get_modifications_subset(df, types=['activity, induced',
             sites += site_list
             mod_type += [type]*len(site_list)
         genes = [mapping.get_name_from_uniprot(id) for id in uids]
-        df = pd.DataFrame(zip(uids, genes, sites, mod_type),
+        df = pd.DataFrame(list(zip(uids, genes, sites, mod_type)),
                           columns=['Uniprot_Id', 'Gene_Symbol',
                                    'Site', 'Modification_type'])
         df = df[df.Site.str.contains('-p')]
