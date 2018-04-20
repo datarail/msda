@@ -42,7 +42,7 @@ def make_rnkfile(df, sample1, sample2, identifier):
     df2 = df.copy()
     df2[sample1] = df2[sample1].div(df2[sample2])
     df2[sample1] = df2[sample1].apply(np.log2)
-    df2 = df2.sort([sample1])
+    df2 = df2.sort_values([sample1])
     df2 = df2[[identifier, sample1]]
     df2[identifier] = [g.upper() for g in df2[identifier].tolist()]
     df2 = df2.replace([-np.inf, np.inf], np.nan)
