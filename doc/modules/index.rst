@@ -1,10 +1,10 @@
 .. _msda_modules_ref:
 
 
-Raw processing
+Processing phosphoMS
 --------------
 
-.. automodule:: msda.process_raw
+.. automodule:: msda.process_phospho_ms
     :members:
     :show-inheritance:
 
