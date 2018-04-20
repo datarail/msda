@@ -4,7 +4,6 @@ from msda import mapping
 import numpy as np
 from msda import batch_normalization as bn
 import os
-from msda import process_raw
 
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              'resources')
@@ -231,7 +230,7 @@ def merge_batches(dflist, meta_df, pMS=False, norm=False, scale_value=100):
         if not pMS:
             df = df.drop_duplicates(['Uniprot_Id'])
         df, samples = rename_labels(df, meta_df, pMS)
-        df_scaled = process_raw.scale(df, samples, scale_value)
+        df_scaled = scale(df, samples, scale_value)
         # df.index = df.Uniprot_Id.tolist()
         # df = strip_metadata(df, samples)
         df_list.append(df_scaled)
@@ -331,5 +330,29 @@ def normalize_pMS_by_protein(dfp, dfm, samples, scale_value=100):
     dfpn = dfp.copy()
     dfpn[samples] = dfpn[samples].div(dfm[samples])
     dfpn = dfpn.replace([np.inf], np.nan).dropna()
-    dfpn_scaled = process_raw.scale(dfpn, samples, scale_value)
+    dfpn_scaled = scale(dfpn, samples, scale_value)
     return dfpn_scaled
+
+
+def scale(df, samples, scale_value=100):
+    """Return copy of dataframe with a set of columns normalized
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        The data frame to be normalized
+    samples : list of str
+        Column identifiers to use for indexing the data frame
+    scale_value : Optional[float]
+        The value to normalize the selected samples to, default: 100
+
+    Returns
+    -------
+    df2 : pandas dataframe
+        The data frame with the given columns normalized to the given value
+    """
+    df2 = df.copy()
+    df2[samples] = df2[samples].div(df2[samples].sum(axis=1),
+                                    axis=0)
+    df2[samples] = df2[samples].multiply(scale_value)
+    return df2
