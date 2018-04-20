@@ -72,3 +72,30 @@ def scale(df, samples, scale_value=100):
                                     axis=0)
     df2[samples] = df2[samples].multiply(scale_value)
     return df2
+
+
+def filter_max_score(dfp, max_score_cutoff=13.0):
+    """Filter out peptides that have a max score value less than
+    the cutoff value
+
+    Parameters
+    ----------
+    dfp : pandas dataframe
+         the phosphos mass spec data prior to max score filtering
+    max_score_cutoff : Optional[float]
+         the value below which peptides will be filtered out. Default 13
+
+    Returns
+    -------
+    dfp2 : pandas dataframe
+        phospho mass spec data with peptides that have value above cutoff.
+    """
+    dfp.Max_Score = dfp.Max_Score.astype(str)
+    max_composite = np.max([len(str(s).split(';'))
+                            for s in dfp.Max_Score.tolist()])
+    max_score_columns = ['max_score_%d' % (mc+1)
+                         for mc in range(max_composite)]
+    dfp[max_score_columns] = dfp['Max_Score'].str.split(';', expand=True)
+    dfp[max_score_columns] = dfp[max_score_columns].astype(float)
+    dfp2 = dfp[dfp[max_score_columns].gt(max_score_cutoff).any(axis=1)].copy()
+    return dfp2
