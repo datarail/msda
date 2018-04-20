@@ -1,15 +1,22 @@
 import pandas as pd
-import os
 import numpy as np
-
-# path = '../data/test_merge/'
-# files = os.listdir(path)
-
-# df_list = [pd.read_excel("%s%s" % (path, file))
-#           for file in files]
 
 
 def filter_contaminants_reverse(df):
+    """Renames columns and removes proteins that are
+    human contaminants or in reverse sequence
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        the mass spec data prior to filtering contaminants
+
+    Returns
+    -------
+    df4 : pandas dataframe
+        mass spec data that has column names properly named
+        and contaminant/reverse protein removed.
+    """
     df = df.rename(columns={'proteinID': 'Uniprot_Id',
                             'Protein Id': 'Uniprot_Id',
                             'geneSymbol': 'Gene_Symbol',
@@ -28,22 +35,63 @@ def filter_contaminants_reverse(df):
 
 
 def merge(df_list):
+    """Normalizes and merge pST and pY single and conmposite datasets
+
+    Parameters
+    ----------
+    df_list : list of dataframes
+       list of pST/ pY  single and composite phospho datasets
+
+    Returns
+    -------
+    df_out : pandas dataframe
+        datastet that has been normalized for variations in total intensity
+        values of each protein. pST/pY single/composite datasets are merged.
+    """
+    # Standardize column names, removeshuman contaminants,
+    # and protiens in reverse sequence
     df_list = [filter_contaminants_reverse(d) for d in df_list]
+
+    # Use largest dataset in df_list as refernece dataset
+    # to compute normalziation factors
     len_df = [len(d) for d in df_list]
     ref_index = len_df.index(max(len_df))
     ref_df = df_list[ref_index]
 
+    # Divide summed intensities of each sample in reference dataset by
+    # The largest summed intensity across all samples to
+    # compute normalized intensities
     ref_samples = [c for c in ref_df.columns.tolist()
                    if '_sn_sum' in c]
     nrm_factor = ref_df[ref_samples].sum().max()
     sample_sum = ref_df[ref_samples].sum().values.tolist()
     nr_list = [nrm_factor / float(s) for s in sample_sum]
+
+    # Use normalized intensities across all samples to
+    # normalize samples in each dataset
     df_nrm_list = [normalize(d, nr_list) for d in df_list]
+    # Concatentate pST/pY single/composite datasets into single dataframe
     df_out = pd.concat(df_nrm_list, ignore_index=True)
     return df_out
 
 
 def normalize(df, nrm_list):
+    """ Normalize samples in the phospho dataset by normalized intensities computed
+    from the reference (the largest) dataset.
+
+    Parameters
+    ----------
+    df : pandas dataframe
+        pST or pY (single or composite) dataset.
+    nrm_list : list of floats
+        normalized intensities computed from the reference
+        (the largest) dataset.
+
+    Returns
+    -------
+    df2 : pandas dataframe
+        Normalized pST or pY (single or composite) dataset.
+    """
     samples = [c for c in df.columns.tolist() if '_sn_sum' in c]
     df2 = df.copy()
     df2[samples] = df2[samples].multiply(nrm_list)
