@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 # from sklearn.cross_validation import Bootstrap
 import numpy as np
 import requests
+import os
 # import seaborn as sns
 
 
@@ -20,8 +21,9 @@ import requests
 # with open(filename, 'wb') as f:
 #       for line in lines2:
 #           f.write('%s\n' % line)
-df_mw_chart = pd.read_csv('../data/amino_acid_mw_chart.csv')
-
+# df_mw_chart = pd.read_csv('../data/amino_acid_mw_chart.csv')
+resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             'resources')
 
 def get_id(md_string):
     """Uniprot ID extracted from detailed identifiers in fasta file
@@ -219,8 +221,10 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
     df : pandas dataframe
        proteomics dataset normalized by IBAQ
     """
-    ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
-    df_ref = pd.read_csv(ref_file)
+    # ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
+    # df_ref = pd.read_csv(ref_file)
+    df_ref = pd.read_csv(os.path.join(resource_path,
+                                      '%s_proteome_mw_peptides.csv' % organism))
     num_theor_peptides = []
     if samples is None:
         samples = df.columns.tolist()[2:]
