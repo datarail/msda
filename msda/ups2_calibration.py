@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 import os
-# import seaborn as sns
 
 
 # http://pir.georgetown.edu/cgi-bin/comp_mw.pl?ids=P53039&seq=&submit=Submit
@@ -24,6 +23,7 @@ import os
 # df_mw_chart = pd.read_csv('../data/amino_acid_mw_chart.csv')
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              'resources')
+
 
 def get_id(md_string):
     """Uniprot ID extracted from detailed identifiers in fasta file
@@ -59,7 +59,8 @@ def get_mw(seq):
     mw_seq : int
       molecular weight of sequence
     """
-
+    df_mw_chart = pd.read_csv(os.join.path(resource_path,
+                                           'amino_acid_mw_chart.csv'))
     counter = collections.Counter(seq)
     mw_seq = 0
     for aa in counter.keys():
@@ -86,7 +87,7 @@ def get_peptides(seq, amino_acid):
 
     Returns
     -------
-    r_peptides: list of strings
+    r_peptides : list of strings
        list of petides resulting from in-silico digest
     """
     r_indeces = [m.end()-1 for m in re.finditer(amino_acid, seq)]
@@ -152,7 +153,8 @@ def generate_report(file):
     lines = open(file).readlines()
     uids, length, mw, obs_pep, obs_pep2 = [], [], [], [], []
     for pr in range(0, len(lines), 2):
-        if (not lines[pr].startswith('>##')) & ('contaminant' not in lines[pr]):
+        if (not lines[pr].startswith('>##')) & (
+                'contaminant' not in lines[pr]):
             pr_id = lines[pr]
             pr_seq = lines[pr+1].strip('\r\n')
             uids.append(get_id(pr_id))
@@ -185,8 +187,9 @@ def compute_ibaq_1sample(df, organism='human'):
     df : pandas dataframe
        proteomics dataset normalized by IBAQ
     """
-    ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
-    df_ref = pd.read_csv(ref_file)
+    df_ref = pd.read_csv(
+        os.path.join(resource_path,
+                     '%s_proteome_mw_peptides.csv' % organism))
     num_theor_peptides, ibaq_list, log10_ibaq = [], [], []
     for protein in df['Uniprot_Id'].tolist():
         try:
@@ -223,8 +226,9 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
     """
     # ref_file = 'resources/%s_proteome_mw_peptides.csv' % organism
     # df_ref = pd.read_csv(ref_file)
-    df_ref = pd.read_csv(os.path.join(resource_path,
-                                      '%s_proteome_mw_peptides.csv' % organism))
+    df_ref = pd.read_csv(
+        os.path.join(resource_path,
+                     '%s_proteome_mw_peptides.csv' % organism))
     num_theor_peptides = []
     if samples is None:
         samples = df.columns.tolist()[2:]
@@ -245,7 +249,7 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
     df2 = df2.fillna(0)
     df2[samples] = df2[samples].div(df2['num_theoretical_peptides'],
                                     axis=0)
-    
+
     df2.loc[:, samples] = df2.loc[:, samples].div(df2[samples].sum(axis=0))
     return df2
     # df2[samples] = df2[samples].apply(np.log10)
@@ -255,7 +259,7 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
 
 
 def ups2_regression(ups2_ibaq, ups2_conc):
-    """Linear regression based on concentrations of ups2 standards 
+    """Linear regression based on concentrations of ups2 standards
     and their ibaq values
 
     Parameters
@@ -385,9 +389,9 @@ def ibaq_comparision(df_ibaq, samples, biomarkers,
         for id in range(len(df3)):
             sample = df3['variable'].iloc[id]
             labels.append(sample_map[sample])
-        print(len(labels))    
-        df3['Label'] = labels        
-    #sns.stripplot(x="Gene_Symbol", y="log10(iBAQ)",
-    #              data=df3, hue="Label")
-    #plt.savefig(plot_name, dpi=600)
+        print(len(labels))
+        df3['Label'] = labels
+    # sns.stripplot(x="Gene_Symbol", y="log10(iBAQ)",
+    #               data=df3, hue="Label")
+    # plt.savefig(plot_name, dpi=600)
     return df3
