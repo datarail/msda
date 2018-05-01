@@ -47,13 +47,14 @@ def get_metadata_colormap(dfm):
     return df_cols, color_dict
 
 
-def plot_clustermap(df_fc, dfm, yticklabels=False):
+def plot_clustermap(df_fc, dfm, metric='euclidean', yticklabels=False):
     dfc = df_fc.copy()
     dfc.columns = dfm.index.tolist()
     df_cols, color_dict = get_metadata_colormap(dfm)
     cmap = get_blue_yellow_cmap()
     cg = sns.clustermap(dfc.fillna(0), col_colors=df_cols,
                         cmap=cmap, vmin=-1.5, vmax=1.5,
+                        metric=metric,
                         yticklabels=yticklabels,
                         xticklabels=False)
     for label in color_dict.keys():
