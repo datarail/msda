@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from scipy.stats import gaussian_kde
 from matplotlib.gridspec import GridSpec
+from matplotlib.legend import Legend
+from matplotlib.legend_handler import HandlerPatch
 
 
 def get_score(df, sample, signature):
@@ -31,7 +33,8 @@ def get_all_scores(df, samples, sig1, sig2):
 
 
 def plot_scatter(dfs, sig1, sig2, hue='agent', alpha='dose',
-                 color_dict=None, marker='o', rbnull=None, ax=None):
+                 color_dict=None, marker='o', plot_legend=True,
+                 ax=None):
     if ax is None:
         fig, ax = plt.subplots(1, 1)
     labels = dfs[hue].unique()
@@ -48,37 +51,36 @@ def plot_scatter(dfs, sig1, sig2, hue='agent', alpha='dose',
         rgba_colors[:, :] = color_dict[ftr]
         edge_colors = rgba_colors.copy()
         if alpha is not None:
-            amin = dfis[alpha].min()
-            amax = dfis[alpha].max()
+            amin = dfs[alpha].min()
+            amax = dfs[alpha].max()
             rgba_colors[:, 3] = [1 - (al-amin)/amax for
                                  al in dfis[alpha].tolist()]
             sizes = [100 * al for
                      al in dfis[alpha].tolist()]
-        # markers = ['s' if cl in rbnull else 'o'
-        #             for cl in dfis.cell_line.tolist()]
-        # print(markers)
-        # for um in set(markers):
-        #    mask = markers == um
-
         ax.scatter(y, x, s=sizes, facecolor=rgba_colors,
-                   edgecolor=edge_colors, lw=1)
-    hue_recs = []
-    for label in color_dict.keys():
-        hue_recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=color_dict[label]))
-    alpha_circles = []
-    amin = dfs[alpha].min()
-    amax = dfs[alpha].max()
-    for ds in np.sort(dfs[alpha].unique()):
-        alpha_val = 1 - (ds - amin)/amax
-        gray_alpha = (128/255, 128/255, 128/255) + (alpha_val,)
-        alpha_circles.append(
-            mpatches.Circle((0, 0), fc=gray_alpha))
-    # ax.set_xlabel(sig2)
-    # ax.set_ylabel(sig1)
-    # legend1 = plt.legend(hue_recs, color_dict.keys(), loc=4)
-    # legend2 = plt.legend(alpha_circles, np.sort(dfs[alpha].unique()), loc=2)
-    # ax.add_artist(legend1)
-    # ax.add_artist(legend2)
+                   edgecolor=edge_colors, lw=1, marker=marker)
+    # Legends
+    # -------
+    if plot_legend:    
+        hue_recs = []
+        for label in color_dict.keys():
+            hue_recs.append(mpatches.Rectangle((0, 0), 1, 1, fc=color_dict[label]))
+        alpha_circles = []
+        amin = dfs[alpha].min()
+        amax = dfs[alpha].max()
+        for ds in np.sort(dfs[alpha].unique()):
+            alpha_val = 1 - (ds - amin)/amax
+            gray_alpha = (128/255, 128/255, 128/255) + (alpha_val,)
+            alpha_circles.append(
+                mpatches.Circle((0, 0), radius=5, fc=gray_alpha))
+        legend1 = Legend(parent=ax, handles=hue_recs,
+                         labels=color_dict.keys(), loc=(0.6, 0.02), title='drug')
+        legend2 = Legend(parent=ax, handles=alpha_circles,
+                         labels=[1 * d for d in np.sort(dfs['dose'].unique())],
+                         loc=4, title='dose',
+                         handler_map={mpatches.Circle: HandlerEllipse()})
+        ax.add_artist(legend2).get_frame().set_edgecolor("black")
+        ax.add_artist(legend1).get_frame().set_edgecolor("black")
 
 
 def get_kde(df, drug, dose, signature, grid=None, bandwidth=0.06):
@@ -110,12 +112,14 @@ def plot_kde(df, signature, cd=None, grid=None,
                 ax.plot(x, y, c=cd[drug],
                         linewidth=np.max((1, dose)))
                 if rotate:
-                    ax.set_ylabel(title)
+                    ax.set_ylabel(title, fontweight='bold')
+                    ax.set_ylim((0, df[signature].max() + 0.1))
                 else:
-                    ax.set_xlabel(title)
+                    ax.set_xlabel(title, fontweight='bold')
+                    ax.set_xlim((0, df[signature].max() + 0.1))
+                    ax.set_ylim((0, 3))
             except ValueError:
                 print(drug, dose)
-                
 
 
 def cdk46_sl(df, samples, sig1, sig2):
@@ -143,7 +147,8 @@ def cdk46_sl(df, samples, sig1, sig2):
     plot_kde(dfs6s, 'sig2_score', cd=color_dict, ax=ax4, title='pan-CDK score')
 
 
-def cdk46_dge(df, samples, sig1, sig2):
+def cdk46_dge(df, samples, sig1, sig2,
+              rbnull=['BT549', 'PDX1258', 'PDXHCI002']):
     color_dict = {'Palbociclib': [0.97656, 0.19531, 0.19531, 1],
                   'Ribociclib': [0.8, 0.8, 0.5, 1],
                   'Abemaciclib': [0.13672, 0.23438, 0.99609, 1],
@@ -157,12 +162,32 @@ def cdk46_dge(df, samples, sig1, sig2):
     ax4 = plt.subplot(gs[3])
 
     dfs = get_all_scores(df, samples, sig1, sig2)
-    dfs[['cell_line', 'drug', 'dose']] = dfs['sample'].apply(pd.Series)
-    dfs['dose'] = [float(d) for d in dfs.dose.tolist()]
-    dfs6 = dfs[dfs.drug != 'Alvocidib']
-    plot_scatter(dfs6, 'sig1_score', 'sig2_score',
-                 hue='drug', alpha='dose', color_dict=color_dict, ax=ax2)
+    dfs[['cell_line', 'drug', 'dose']] = dfs['sample'].str.split(
+        '_', expand=True)
+    dfs['dose'] = [round(float(d), 2) for d in dfs.dose.tolist()]
+    dfs['dose'] = dfs['dose'].replace([3.17], 3.16)
+    dfs1 = dfs[~dfs.cell_line.isin(rbnull)]  # [dfs.drug != 'Alvocidib']
+    dfs2 = dfs[dfs.cell_line.isin(rbnull)]
+    plot_scatter(dfs1, 'sig1_score', 'sig2_score',
+                 hue='drug', alpha='dose', color_dict=color_dict,
+                 ax=ax2, marker='o')
+    plot_scatter(dfs2, 'sig1_score', 'sig2_score',
+                 hue='drug', alpha='dose', color_dict=color_dict,
+                 ax=ax2, marker='s',
+                 plot_legend=False)
     dfs6s = dfs[(dfs.drug != 'Alvocidib') & (dfs.dose != 1.0)]
     plot_kde(dfs6s, 'sig1_score', cd=color_dict, ax=ax1,
              rotate=True, title='G1-arrest score')
     plot_kde(dfs6s, 'sig2_score', cd=color_dict, ax=ax4, title='pan-CDK score')
+
+
+class HandlerEllipse(HandlerPatch):
+    def create_artists(self, legend, orig_handle,
+                       xdescent, ydescent, width, height, fontsize, trans):
+        center = 0.5 * width - 0.5 * xdescent, 0.5 * height - 0.5 * ydescent
+        p = mpatches.Ellipse(xy=center, width=1.5*height + xdescent,
+                             height=1.5*height + ydescent)
+        self.update_prop(p, orig_handle, legend)
+        p.set_transform(trans)
+        return [p]
+    
