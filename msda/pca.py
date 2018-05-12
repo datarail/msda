@@ -36,9 +36,11 @@ def plot_scatter(dfpca, explained_variance,
 
     df_pca = dfpca.copy()
     fig, ax = plt.subplots()
-    xlabel = 'PC 1 (%.2f%%)' % (100 * explained_variance[0])
-    ylabel = 'PC 2 (%.2f%%)' % (100 * explained_variance[1])
-    df_pca = scatter.plot(df_pca, x_col='pca_1', y_col='pca_2',
+    xlabel = '%s (%.2f%%)' % (x_col.replace('a_', '').upper(),
+                              100 * explained_variance[0])
+    ylabel = '%s (%.2f%%)' % (y_col.replace('a_', '').upper(),
+                              100 * explained_variance[1])
+    df_pca = scatter.plot(df_pca, x_col=x_col, y_col=y_col,
                           color_col=color_col, color_dict=color_dict,
                           alpha_col=alpha_col,
                           size_col=size_col, size_scale=size_scale,
