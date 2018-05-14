@@ -38,11 +38,11 @@ def read_dataset(file):
 def verify_column_labels(df, pMS=False):
     columns = df.columns.tolist()
     standard_labels = ['Uniprot_Id', 'Gene_Symbol']
-    max_score_cols = [s for s in df.columns.tolist() if 'Max_Score' in s]
+    max_score_cols = [s for s in df.columns.tolist() if 'max_score' in s]
     phospho_labels = max_score_cols + ['Site_Position', 'Motif']
     assert set(standard_labels) < set(columns), "Uniport_Id and Gene_Symbol are expected column labels"
     if pMS:
-        assert set(phospho_labels) < set(columns), "Max_Score, Site_position and Motif are expected columns in phosphoproteomics datasets"
+        assert set(phospho_labels) < set(columns), "max_score, Site_position and Motif are expected columns in phosphoproteomics datasets"
     return None
 
 
@@ -204,7 +204,7 @@ def rename_labels(df, meta_df, pMS=False):
     df = df.rename(columns=sample_key)
     df_samples = [s for s in df.columns.tolist() if s in samples]
     if pMS:
-        max_score_cols = [s for s in df.columns.tolist() if 'Max_Score' in s]
+        max_score_cols = [s for s in df.columns.tolist() if 'max_score' in s]
         metadata_cols = ['Uniprot_Id', 'Gene_Symbol', 'Motif',
                          'Site_Position'] + max_score_cols
         cols = metadata_cols + df_samples

@@ -22,9 +22,9 @@ def filter_contaminants_reverse(df):
                             'geneSymbol': 'Gene_Symbol',
                             'gene_symbol': 'Gene_Symbol',
                             'Site Position': 'Site_Position',
-                            'maxScoreStr': 'Max_Score',
+                            'maxScoreStr': 'max_score',
                             'motifPeptideStr': 'Motif',
-                            'Max Score': 'Max_Score',
+                            'Max Score': 'max_score',
                             'sitePosStr': 'Site_Position'})
     samples = [c for c in df.columns.tolist() if '_sn_sum' in c]
     df2 = df[~(df[samples] == 0).all(axis=1)]
@@ -72,7 +72,7 @@ def merge(df_list):
     df_nrm_list = [normalize(d, nr_list) for d in df_list]
     # Concatentate pST/pY single/composite datasets into single dataframe
     df_out = pd.concat(df_nrm_list, ignore_index=True)
-    return df_out
+    return df_out, nr_list
 
 
 def normalize(df, nrm_list):
@@ -138,12 +138,12 @@ def filter_max_score(dfp, max_score_cutoff=13.0):
     dfp2 : pandas dataframe
         phospho mass spec data with peptides that have value above cutoff.
     """
-    dfp.Max_Score = dfp.Max_Score.astype(str)
+    dfp.max_score = dfp.max_score.astype(str)
     max_composite = np.max([len(str(s).split(';'))
-                            for s in dfp.Max_Score.tolist()])
+                            for s in dfp.max_score.tolist()])
     max_score_columns = ['max_score_%d' % (mc+1)
                          for mc in range(max_composite)]
-    dfp[max_score_columns] = dfp['Max_Score'].str.split(';', expand=True)
+    dfp[max_score_columns] = dfp['max_score'].str.split(';', expand=True)
     dfp[max_score_columns] = dfp[max_score_columns].astype(float)
     dfp2 = dfp[dfp[max_score_columns].gt(max_score_cutoff).any(axis=1)].copy()
     return dfp2
