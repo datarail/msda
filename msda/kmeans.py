@@ -59,18 +59,24 @@ def plot(dfi, dfm, x_col, cluster_id_col='kmeans_cluster_number'):
     df = dfi.rename(columns=col_map).copy()
     samples = list(col_map.values())
     clusters = df[cluster_id_col].unique()
-    # return df
+
     # Define plot properties
     # ----------------------
     grid_height = int(np.ceil(len(clusters) / 3))
     grid_dims = (grid_height, 3)
-    fig = plt.figure(figsize=(16, 6 * grid_height), dpi=30)
+    fig = plt.figure(figsize=(35, 7 * grid_height), dpi=30)
     GridSpec(*grid_dims)
+
+    # Loop over and plot each cluster as a subplot
+    # --------------------------------------------
     for ai, cl in enumerate(clusters):
         dfc = df[df[cluster_id_col] == cl].copy()
         dfc = dfc[samples].mean(axis=1, level=0)
         ax_loc = np.unravel_index(ai, grid_dims)
         ax = plt.subplot2grid(grid_dims, ax_loc)
-        dfc.T.plot(ax=ax, color='b', title=cl,
+        dfc.T.plot(ax=ax, color='b',
                    xticks=range(dfc.shape[1]), legend=False)
+        ax.tick_params(axis='both', which='major', labelsize=20)
+        ax.set_title(cl, fontsize=24, fontweight='bold')
+    plt.subplots_adjust(hspace=0.35, bottom=0.1, top=0.95)
     return fig
