@@ -77,7 +77,7 @@ def plot(df,
     else:
         smin = dfs[size_col].min()
         smax = dfs[size_col].max()
-        size_list = [10 + (size_scale * (1 - (sl - smin)/(smax-smin)))
+        size_list = [10 + (size_scale * ((sl - smin)/(smax-smin)))
                      for sl in dfs[size_col].tolist()]
     dfs['size'] = size_list
 
@@ -99,7 +99,7 @@ def plot(df,
     # Assing alpha for data points
     # -----------------------------
     if alpha_col is None:
-        dfs['alpha'] = [0.8]*len(dfs)
+        dfs['alpha'] = [1] * len(dfs)
     else:
         amin = dfs[alpha_col].min()
         amax = dfs[alpha_col].max()
@@ -122,8 +122,8 @@ def plot(df,
         xlabel = x_col
     if ylabel is None:
         ylabel = y_col
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
+    ax.set_xlabel(xlabel, fontweight='bold')
+    ax.set_ylabel(ylabel, fontweight='bold')
 
     if xmin is None:
         xmin = ax.get_xlim()[0]
