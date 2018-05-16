@@ -8,7 +8,8 @@ from matplotlib.legend import Legend
 
 def plot(df,
          x_col, y_col,
-         color_col=None, color_dict=None, alpha_col=None,
+         color_col=None, color_dict=None,
+         alpha_col=None, default_alpha=1,
          size_col=None, size_scale=100,
          sd_ellipse=False,
          xmin=None, xmax=None,
@@ -37,6 +38,8 @@ def plot(df,
     alpha_col : Optional[str]
         Name of metadata column that can be represented on the data points plot
         as varying opacities.
+    default_alpha : Optional[int]
+        If alpha column is not specified, alpha takes the value of defulat_alpha.
     size_col : Optional[str]
         Name of metadata column that can be represented by size of data point.
     size_scale : Optional[float]
@@ -99,7 +102,7 @@ def plot(df,
     # Assing alpha for data points
     # -----------------------------
     if alpha_col is None:
-        dfs['alpha'] = [1] * len(dfs)
+        dfs['alpha'] = [default_alpha] * len(dfs)
     else:
         amin = dfs[alpha_col].min()
         amax = dfs[alpha_col].max()
