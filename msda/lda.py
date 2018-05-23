@@ -5,6 +5,10 @@ from msda import scatter
 
 
 def compute_LDA(dfi, features, meta_col, num_components=2):
+    """Ref http://python-for-multivariate-analysis.readthedocs.io/
+       a_little_book_of_python_for_multivariate_analysis.html
+       for useful examples of methods attributes.
+    """
     # LDA
     dfs = dfi.dropna(subset=features)
     X = dfs[features].values
@@ -13,8 +17,8 @@ def compute_LDA(dfi, features, meta_col, num_components=2):
 
     lda = LDA(n_components=num_components).fit(X, y)
     scalings = lda.scalings_
-    df_loadings = pd.DataFrame(scalings, index=features,
-                               columns=lda_cols)
+    df_loadings = pd.DataFrame(scalings[:, :num_components],
+                               index=features, columns=lda_cols)
 
     explained_variance = lda.explained_variance_ratio_
     X_lda = lda.transform(X)
@@ -43,10 +47,10 @@ def plot_scatter(dflda, explained_variance,
     explained_variance : list of floats
        the fractions of variance explained by each principal component.
     x_col : str
-       column name corresponding to x-axis principal component
+       column name corresponding to x-axis component
        of the scatter plot.
     y_col : str
-       column name corresponding to y-axis principal compnent
+       column name corresponding to y-axis compnent
        of the scatter plot.
     color_col : Optional[str]
        Name of metadata column that can be represented as different colors.
@@ -108,3 +112,5 @@ def plot_loading(df_loadings, component='ld_1', xlabel='Features'):
     xlim = plt.xlim()
     plt.plot(xlim, [0, 0], '--k', linewidth=1)
     plt.xlabel('Features', fontweight='bold')
+    lead_features = dfl.index[0:5].tolist() + dfl.index[-5:].tolist()
+    return lead_features
