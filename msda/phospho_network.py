@@ -6,7 +6,7 @@ import re
 import subprocess
 from msda import mapping
 import os
-from msda import ptm_info as pi
+#from msda import ptm_info as pi
 from msda import preprocessing as pr
 
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -38,8 +38,8 @@ def rename_columns(df):
                             'gene_symbol': 'Gene_Symbol',
                             'Gene Symbol': 'Gene_Symbol',
                             'motifPeptideStr': 'Motif',
-                            'Localization score': 'Max_Score',
-                            'Max Score': 'Max_Score'})
+                            'Localization score': 'max_score',
+                            'max Score': 'max_Score'})
     return df
 
 
@@ -266,11 +266,11 @@ def split_sites(df):
     df['Origin'] = origin
     
     motif = series_split(df, 'Motif')
-    max_score = series_split(df, 'Max_Score', type='float')
+    max_score = series_split(df, 'max_score', type='float')
     sp = series_split(df, 'Site_Position', type='int')
     
     del df['Motif']
-    del df['Max_Score']
+    del df['max_score']
     del df['Site_Position']
     dfe = pd.DataFrame(list(zip(motif, max_score, sp)),
                        index=sp.index.tolist(),
