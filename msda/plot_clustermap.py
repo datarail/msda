@@ -27,18 +27,20 @@ def get_blue_yellow_cmap():
     return cmap
 
 
-def get_metadata_colormap(dfm):
+def get_metadata_colormap(dfm, features, color_dict=None):
     df_cols = dfm.copy()
-    color_dict = {}
-    for feature in df_cols:
+    if color_dict is None:
+        color_dict = {}
+    for feature in features:
         labels = df_cols[feature].unique()
-        if feature == 'dose':
+        if 'dose' in feature :
             labels = np.sort([float(s) for s in labels])
             scheme = "YlOrRd"
         else:
             scheme = "husl"
         color_dict.update(construct_color_dict(labels, scheme))
-        df_cols[feature] = df_cols[feature].map(color_dict)
+    for col in df_cols.columns.tolist():
+        df_cols[col] = df_cols[col].map(color_dict)
     ocols = df_cols.columns.tolist()
     df_cols[''] = ['white'] * len(df_cols)
     ncols = [("%s " % s).split(' ') for s in ocols]
@@ -47,16 +49,15 @@ def get_metadata_colormap(dfm):
     return df_cols, color_dict
 
 
-def plot_clustermap(df_fc, dfm, metric='euclidean', yticklabels=False):
+def plot_clustermap(df_fc, df_cols, color_dict,
+                    metric='euclidean', yticklabels=False):
     dfc = df_fc.copy()
-    dfc.columns = dfm.index.tolist()
-    df_cols, color_dict = get_metadata_colormap(dfm)
     cmap = get_blue_yellow_cmap()
     cg = sns.clustermap(dfc.fillna(0), col_colors=df_cols,
                         cmap=cmap, vmin=-1.5, vmax=1.5,
                         metric=metric,
                         yticklabels=yticklabels,
-                        xticklabels=False)
+                        xticklabels=False, figsize=(6, 7))
     for label in color_dict.keys():
         cg.ax_col_dendrogram.bar(0, 0, color=color_dict[label],
                                  label=label, linewidth=0)
