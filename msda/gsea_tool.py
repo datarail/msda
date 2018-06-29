@@ -50,12 +50,20 @@ def get_gsea_enrichment(input_file, library, out_folder):
 
     file1 = '%s/gsea_report_for_na_neg_%s.xls' % (terminal_path, timestamp)
     file2 = '%s/gsea_report_for_na_pos_%s.xls' % (terminal_path, timestamp)
+    dfl = []
+    if os.path.isfile(file1):
+        dfl.append(pd.read_table(file1))
+    if os.path.isfile(file2):
+        dfl.append(pd.read_table(file2))
+    # try:
+    #     df_pos = pd.read_table(file1)
+    #     df_neg = pd.read_table(file2)
+    # except IOError:
+    #     pass
     try:
-        df_pos = pd.read_table(file1)
-        df_neg = pd.read_table(file2)
-    except IOError:
-        pass
-    df = pd.concat([df_pos, df_neg])
+        df = pd.concat(dfl)
+    except ValueError:
+        df = pd.DataFrame()
     return df
 
 
