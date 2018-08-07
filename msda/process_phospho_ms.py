@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import os
 
 
 def filter_contaminants_reverse(df):
@@ -147,3 +148,27 @@ def filter_max_score(dfp, max_score_cutoff=13.0):
     dfp[max_score_columns] = dfp[max_score_columns].astype(float)
     dfp2 = dfp[dfp[max_score_columns].gt(max_score_cutoff).any(axis=1)].copy()
     return dfp2
+
+
+def process(raw_files_path):
+    """ Wrapper function that reads in raw excel files from core
+    and outputs merged phoshoMS table.
+
+    Parameters
+    ----------
+    raw_files_path : str
+        path to fodler containing excel files from core
+    
+    Returns
+    -------
+    dfp : pandas dataframe
+      Merged and normalized phosho ms dataframe 
+    """
+    raw_files = os.listdir(raw_files_path)
+    df_list = []
+    for rf in raw_files:
+        file_path = "%s/%s" % (raw_files_path, rf)
+        df_list.append(pd.read_excel(file_path))
+    dfp, _  = merge(df_list)
+    return dfp
+    
