@@ -64,6 +64,10 @@ def plot(df,
         Label for y-axis
     ax : Optional[subplot axes]
         Reference to subplot object.
+    legend : Optional[bool]
+        True if legend is to be shown. False otherwise. Default is True.
+    default_color : Optional[str]
+        Color of data points if color_dict is not provided. Default is blue.
 
     Returns
     -------
