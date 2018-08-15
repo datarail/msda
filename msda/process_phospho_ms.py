@@ -172,3 +172,25 @@ def process(raw_files_path):
     dfp, _  = merge(df_list)
     return dfp
     
+
+def replace_tmt_labels(dfp, dfm):
+    """Replace default tmt labels with sample names provided by metadata file
+    
+    Parameters:
+    -----------
+    dfp : pandas dataframe
+        protein/phosphoprotein dataset
+
+   dfm : pandas dataframe
+       metadata table that should contain atleast 2 columns named
+       'tmt_label' and 'sample'
+
+    Returns:
+    --------
+    dfp : pandas dataframe
+        protein/phosphoprotein dataset with tmt labels replaced by sample name
+    """
+    rdict = {t: s for t, s in zip(dfm['tmt_label'].tolist(),
+                                  dfm['sample'].tolist())}
+    dfp = dfp.rename(columns=rdict).copy()
+    return dfp
