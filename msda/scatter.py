@@ -4,6 +4,7 @@ from matplotlib.patches import Ellipse
 import numpy as np
 import matplotlib.patches as mpatches
 from matplotlib.legend import Legend
+from matplotlib import colors
 
 
 def plot(df,
@@ -16,7 +17,8 @@ def plot(df,
          ymin=None, ymax=None,
          annotate_points=None,
          xlabel=None, ylabel=None,
-         ax=None):
+         ax=None, legend=True,
+         default_color='b'):
     """Scatter plot based on input x and y columns in dataframe.
     Color, opacity and size of datapoints can also be set
     based on columns in the dataframe.
@@ -76,7 +78,7 @@ def plot(df,
     # Assign size of data points
     # --------------------------
     if size_col is None:
-        size_list = 100  # plt.rcParams['lines.markersize'] ** 2
+        size_list = size_scale  # plt.rcParams['lines.markersize'] ** 2
     else:
         smin = dfs[size_col].min()
         smax = dfs[size_col].max()
@@ -87,7 +89,8 @@ def plot(df,
     # Assign colors for data points
     # -----------------------------
     if color_col is None:
-        dfs['color'] = [(66/255, 134/255, 244/255)] * len(dfs)
+        rgb_color = colors.to_rgb(default_color)
+        dfs['color'] = [rgb_color] * len(dfs)
     elif color_dict is None:
         labels = dfs[color_col].unique()
         colrs = sns.color_palette("husl", len(labels))
@@ -154,7 +157,7 @@ def plot(df,
             ell.set_facecolor('none')
             ell.set_edgecolor('black')
             ax.add_artist(ell)
-    if color_col is not None:
+    if legend & (color_col is not None):
         hue_recs = []
         for label in color_dict.keys():
             hue_recs.append(mpatches.Rectangle((0, 0), 1, 1,
