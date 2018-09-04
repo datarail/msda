@@ -119,14 +119,30 @@ def plot(df,
 
     dfs['rgba'] = [rgb + (a,) for rgb, a in
                    zip(dfs['color'], dfs['alpha'])]
+    
 
-    x = dfs[x_col].tolist()
-    y = dfs[y_col].tolist()
-    ax.scatter(x, y,
-               s=dfs['size'].tolist(),
-               facecolors=dfs['rgba'].tolist(),
-               edgecolors=dfs['color'].tolist(),
-               lw=1)
+    if 'markers' in dfs.columns.tolist():
+        unique_markers = dfs['markers'].unique()
+        for um in unique_markers:
+            dfsm = dfs[dfs.markers == um].copy()          
+    
+            x = dfsm[x_col].tolist()
+            y = dfsm[y_col].tolist()
+            ax.scatter(x, y,
+                       s=dfsm['size'].tolist(),
+                       facecolors=dfsm['rgba'].tolist(),
+                       edgecolors=dfsm['color'].tolist(),
+                       marker=um,
+                       lw=1)
+            
+    else:
+        x = dfs[x_col].tolist()
+        y = dfs[y_col].tolist()
+        ax.scatter(x, y,
+                   s=dfs['size'].tolist(),
+                   facecolors=dfs['rgba'].tolist(),
+                   edgecolors=dfs['color'].tolist(),
+                   lw=1)
 
     if xlabel is None:
         xlabel = x_col
