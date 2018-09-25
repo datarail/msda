@@ -33,6 +33,8 @@ def get_metadata_colormap(dfm, features, color_dict=None):
         color_dict = {}
     for feature in features:
         labels = df_cols[feature].unique()
+        keys_in_dict = list(color_dict.keys())
+        labels = [l for l in labels if l not in keys_in_dict]
         if 'dose' in feature :
             labels = np.sort([float(s) for s in labels])
             scheme = "YlOrRd"
