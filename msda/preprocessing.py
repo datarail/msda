@@ -356,3 +356,30 @@ def scale(df, samples, scale_value=100):
                                     axis=0)
     df2[samples] = df2[samples].multiply(scale_value)
     return df2
+
+
+def compute_row_anova(row, groups):
+    """ Compute Anova statistic and p-value for a given row of dataframe
+    Parameter
+    ---------
+    row: dataframe row
+    groups: list of list
+      list of column names divided by group
+      eg: [['c1_grp1, 'c2_grp1'], ['c3_grp2'], ['c4_grp2']]
+    
+    """
+    test = []
+    for grp in groups:
+        test.append(row[grp].values.tolist())
+    s, p = f_oneway(*test)
+    return pd.Series([s, p])
+
+
+def compute_anove(df, groups):
+    """Compute Anova statistic and p-value for a datframe given the
+    columns that are to be grouped together as a list of lists:
+    """
+    df[['anova_statistic', 'anova_pvalue']] = df.apply(
+        compute_row_anova, groups=groups, axis=1)
+    return df
+ 
