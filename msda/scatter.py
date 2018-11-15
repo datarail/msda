@@ -21,7 +21,8 @@ def plot(df,
          annotate_points=None,
          xlabel=None, ylabel=None,
          ax=None, legend=True,
-         default_color='b'):
+         default_color='b',
+         rasterized=False):
     """Scatter plot based on input x and y columns in dataframe.
     Color, opacity and size of datapoints can also be set
     based on columns in the dataframe.
@@ -136,7 +137,7 @@ def plot(df,
                        facecolors=dfsm['rgba'].tolist(),
                        edgecolors=dfsm['color'].tolist(),
                        marker=um,
-                       lw=1)
+                       lw=1, rasterized=rasterized)
             
     else:
         x = dfs[x_col].tolist()
@@ -145,7 +146,7 @@ def plot(df,
                    s=dfs['size'].tolist(),
                    facecolors=dfs['rgba'].tolist(),
                    edgecolors=dfs['color'].tolist(),
-                   lw=1)
+                   lw=1, rasterized=rasterized)
 
     if xlabel is None:
         xlabel = x_col
