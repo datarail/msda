@@ -5,6 +5,9 @@ import numpy as np
 import matplotlib.patches as mpatches
 from matplotlib.legend import Legend
 from matplotlib import colors
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def plot(df,

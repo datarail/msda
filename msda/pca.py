@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import pandas as pd
 from msda import scatter
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def compute_pca(df, dfm=None, num_components=2):
