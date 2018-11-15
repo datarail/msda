@@ -7,6 +7,9 @@ from scipy.stats import gaussian_kde
 from matplotlib.gridspec import GridSpec
 from matplotlib.legend import Legend
 from matplotlib.legend_handler import HandlerPatch
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 
 
 def get_score(df, sample, signature):
@@ -59,6 +62,8 @@ def plot_scatter(dfs, sig1, sig2, hue='agent', alpha='dose',
                      al in dfis[alpha].tolist()]
         ax.scatter(y, x, s=sizes, facecolor=rgba_colors,
                    edgecolor=edge_colors, lw=1, marker=marker)
+        ax.set_xlim((-0.05, 1.15))
+        ax.set_ylim((-0.05, 1.15))
     # Legends
     # -------
     if plot_legend:    
@@ -94,7 +99,9 @@ def get_kde(df, drug, dose, signature, grid=None, bandwidth=0.06):
 
 
 def plot_kde(df, signature, cd=None, grid=None,
-             ax=None, rotate=False, title=''):
+             ax=None, rotate=False, title='',
+             linestyle='-', lw=None):
+
     if ax is None:
         fig, ax = plt.subplots(1, 1)
     if cd is None:
@@ -103,6 +110,10 @@ def plot_kde(df, signature, cd=None, grid=None,
         grid = np.arange(0, 1.2, 0.02)
     for drug in df.drug.unique():
         for dose in df.dose.unique():
+            if lw is None:
+                lwc = np.max((1, dose))
+            else:
+                lwc = lw
             try:
                 f_dist = get_kde(df, drug, dose, signature, grid)
                 if rotate:
@@ -110,14 +121,14 @@ def plot_kde(df, signature, cd=None, grid=None,
                 else:
                     x, y = grid, f_dist
                 ax.plot(x, y, c=cd[drug],
-                        linewidth=np.max((1, dose)))
+                        linestyle=linestyle, linewidth=lwc)
                 if rotate:
                     ax.set_ylabel(title, fontweight='bold')
-                    ax.set_ylim((0, df[signature].max() + 0.1))
+                    ax.set_ylim((0, 1.2))
                 else:
                     ax.set_xlabel(title, fontweight='bold')
-                    ax.set_xlim((0, df[signature].max() + 0.1))
-                    ax.set_ylim((0, 3))
+                    ax.set_xlim((0, 1.2))
+                    #ax.set_ylim((0, 3))
             except ValueError:
                 print(drug, dose)
 
@@ -148,11 +159,11 @@ def cdk46_sl(df, samples, sig1, sig2):
 
 
 def cdk46_dge(df, samples, sig1, sig2,
-              rbnull=['BT549', 'PDX1258', 'PDXHCI002']):
+              rbnull=['BT549', 'PDX1258']):
     color_dict = {'Palbociclib': [0.97656, 0.19531, 0.19531, 1],
                   'Ribociclib': [0.8, 0.8, 0.5, 1],
                   'Abemaciclib': [0.13672, 0.23438, 0.99609, 1],
-                  'Alvocidib': [0, 0, 0, 1]}
+                  'Alvocidib': [26/255, 128/255, 51/255, 1]}
     gs = GridSpec(2, 2,
                   width_ratios=[1, 4],
                   height_ratios=[4, 1]
@@ -175,10 +186,18 @@ def cdk46_dge(df, samples, sig1, sig2,
                  hue='drug', alpha='dose', color_dict=color_dict,
                  ax=ax2, marker='s',
                  plot_legend=False)
-    dfs6s = dfs[(dfs.drug != 'Alvocidib') & (dfs.dose != 1.0)]
+    #dfs6s = dfs[(dfs.drug != 'Alvocidib') & (dfs.dose != 1.0)]
+    dfs6s = dfs[(~dfs['drug'].isin(rbnull)) &
+                (dfs.dose != 0.1) & (dfs.dose != 1.0)]
     plot_kde(dfs6s, 'sig1_score', cd=color_dict, ax=ax1,
              rotate=True, title='G1-arrest score')
     plot_kde(dfs6s, 'sig2_score', cd=color_dict, ax=ax4, title='pan-CDK score')
+    dfa = dfs6[(dfs6.drug == 'Alvocidib') & (dfs6.dose == 1.0)]
+    plot_kde(dfa, 'sig1_score', cd=color_dict, ax=ax1,
+             rotate=True, title='G1-arrest score',
+             linestyle='--', lw=2)
+    plot_kde(dfa, 'sig2_score', cd=color_dict, ax=ax4, title='pan-CDK score',
+             linestyle='--', lw=2)
 
 
 class HandlerEllipse(HandlerPatch):
