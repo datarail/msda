@@ -4,6 +4,7 @@ from msda import mapping
 import numpy as np
 from msda import batch_normalization as bn
 import os
+from scipy.stats import f_oneway
 
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              'resources')
@@ -375,7 +376,7 @@ def compute_row_anova(row, groups):
     return pd.Series([s, p])
 
 
-def compute_anove(df, groups):
+def compute_anova(df, groups):
     """Compute Anova statistic and p-value for a datframe given the
     columns that are to be grouped together as a list of lists:
     """
