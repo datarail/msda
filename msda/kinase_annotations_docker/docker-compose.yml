@@ -1,0 +1,13 @@
+version: "3"
+services:
+
+  # Name of service	
+  networkin:
+  
+    # Name of image in the form username/repo:tag 
+    image: kinase_annotation:latest
+
+    # Name of volumes to mount
+    volumes:
+      - ./data/:/input
+      - ./output/:/output
