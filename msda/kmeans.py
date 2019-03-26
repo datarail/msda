@@ -110,7 +110,7 @@ def compare_silhoutte_scores(dfi, samples, range_n_clusters, cluster_dim='featur
     """
     df = dfi.fillna(0).copy()
     X = df[samples].values
-    if cluster_dim='samples':
+    if cluster_dim == 'samples':
         X = X.T
     
 
