@@ -2,11 +2,12 @@ import pandas as pd
 import requests
 import numpy as np
 import os
+import logging
 
 resource_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              'resources')
-df_psite = pd.read_table(os.path.join(resource_path,
-                                      'phosphosite_dataset_appended.tsv'))
+#df_psite = pd.read_table(os.path.join(resource_path,
+#                                      'phosphosite_dataset_appended.tsv'))
 
 df_ptm = pd.read_table(os.path.join(resource_path,
                                     'Regulatory_sites_appended.tsv'),
@@ -215,35 +216,54 @@ def make_input(excel_file):
 
 
 def construct_motif(uid, site):
+
+    # logger = logging.getLogger()
+    # logger.setLevel(logging.DEBUG)
+
+    # console = logging.StreamHandler()
+    # console.setLevel(logging.INFO)
+    # formatter = logging.Formatter("%(levelname)s - %(message)s")
+    # # tell the handler to use this format
+    # console.setFormatter(formatter)
+    # logger.addHandler(console)
+    
     url = 'http://www.uniprot.org/uniprot/%s.fasta' % uid
-    r = requests.get(url)
+    try:
+        r = requests.get(url)
+        r.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        logging.info("%s caused for inquiry protein %s" %  (err, uid))
+        raise ValueError('%s returns 404 error' % uid)
     try:
         seq_all = str(r.text)
-        if seq_all != '':        
-            seq = ''.join(seq_all.strip().split('\n')[1:])
-            site_num = int(site[1:])
-            st = site_num - 8
-            en = site_num + 6
-            if st < 0:
-                start = 0
-                prefix = ''.join(['_']*abs(st))
-            else:
-                start = st
-                prefix = ''
-            if en > len(seq):
-                end = len(seq) - 1
-                suffix = ''.join(['_']*(en - end))
-            else:
-                end = en
-                suffix = ''
-            subseq = prefix + seq[start: end+1] + suffix
+        site_num = int(site[1:])
+        if seq_all == '':
+            raise ValueError('Protein %s returns blank string')
+        seq = ''.join(seq_all.strip().split('\n')[1:])  
+        if len(seq) < site_num:
+            logging.info('')
+            raise ValueError('Site position %s greater than length of protein %s'
+                             % (site_num, uid))
+        #if seq_all != '':                        
+        st = site_num - 8
+        en = site_num + 6
+        if st < 0:
+            start = 0
+            prefix = ''.join(['_']*abs(st))
         else:
-            subseq = 'obsolete'
-        return subseq
+            start = st
+            prefix = ''
+        if en > len(seq):
+            end = len(seq) - 1
+            suffix = ''.join(['_']*(en - end))
+        else:
+            end = en
+            suffix = ''
+        subseq = prefix + seq[start: end+1] + suffix    
     except UnicodeEncodeError:
         print(uid, site)
         subseq = 'obsolote'
-        return subseq
+    return subseq
 
 
 def get_primary_ids(secondary_id):
