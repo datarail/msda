@@ -47,8 +47,8 @@ def verify_column_labels(df, pMS=False):
     return None
 
 
-def remove_human_contaminants(df):
-    df = df[~df.Uniprot_Id.str.contains('HUMAN_contaminant')]
+def remove_contaminants(df):
+    df = df[~df.Uniprot_Id.str.contains('_contaminant')]
     df.index = range(len(df))
     return df
 
@@ -141,7 +141,7 @@ def preprocess_dataset(file, pMS=False):
     cols = [re.sub(" ", "_", str(i)) for i in df.columns]
     df.columns = cols
     verify_column_labels(df, pMS)
-    df = remove_human_contaminants(df)
+    df = remove_contaminants(df)
     df = remove_reverse_proteins(df)
     df = correct_uniprot_identifiers(df)
     df = correct_gene_names(df)
