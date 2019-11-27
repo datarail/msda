@@ -35,13 +35,16 @@ def filter_contaminants_reverse(df):
     return df4
 
 
-def merge(df_list):
+def merge(df_list, control_sample=None):
     """Normalizes and merge pST and pY single and conmposite datasets
 
     Parameters
     ----------
     df_list : list of dataframes
        list of pST/ pY  single and composite phospho datasets
+    control_sample : str
+       Name of control sample to use for nomalization.
+       Default is None in which case sample with the highest summed intensity is used.
 
     Returns
     -------
@@ -66,7 +69,10 @@ def merge(df_list):
     # compute normalized intensities
     ref_samples = [c for c in ref_df.columns.tolist()
                    if '_sn_sum' in c]
-    nrm_factor = ref_df[ref_samples].sum().max()
+    if control_sample is not None:
+        nrm_factor = ref_df[control_sample].sum()
+    else:
+        nrm_factor = ref_df[ref_samples].sum().max()
     sample_sum = ref_df[ref_samples].sum().values.tolist()
     nr_list = [nrm_factor / float(s) for s in sample_sum]
 
