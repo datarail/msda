@@ -48,6 +48,8 @@ def merge(df_list):
     df_out : pandas dataframe
         datastet that has been normalized for variations in total intensity
         values of each protein. pST/pY single/composite datasets are merged.
+    nr_list : list[float]
+        List of ratios of summed intensities per sample relative to reference batch
     """
     # Standardize column names, removeshuman contaminants,
     # and protiens in reverse sequence
