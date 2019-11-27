@@ -245,7 +245,7 @@ def compute_ibaq_dataset(df, organism='human', samples=None):
                                   if 6 < len(pep) < 31]
             num_theor_peptides.append(len(rp_peptides_subset))
     df['num_theoretical_peptides'] = num_theor_peptides
-    df2 = df.copy()
+    df2 = df[df['num_theoretical_peptides'] >=1].copy()
     df2 = df2.fillna(0)
     df2[samples] = df2[samples].div(df2['num_theoretical_peptides'],
                                     axis=0)
