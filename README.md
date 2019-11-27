@@ -4,7 +4,8 @@ The proteomics analysis pipeline consists of a suite of tools that support the d
 # Installation
 To install the Python dependencies of this package, run
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/datarail/msda.git
+pip install -e msda
 ```
 
 # Using the pipeline
