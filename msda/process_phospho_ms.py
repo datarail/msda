@@ -158,7 +158,7 @@ def filter_max_score(dfp, max_score_cutoff=13.0):
     return dfp2
 
 
-def process(raw_files_path):
+def process(raw_files_path, control_sample=None):
     """ Wrapper function that reads in raw excel files from core
     and outputs merged phoshoMS table.
 
@@ -166,6 +166,9 @@ def process(raw_files_path):
     ----------
     raw_files_path : str
         path to fodler containing excel files from core
+    control_sample : str
+       Name of control sample (or tmt labes) to use for nomalization.
+       Default is None in which case sample with the highest summed intensity is used.
     
     Returns
     -------
@@ -177,7 +180,7 @@ def process(raw_files_path):
     for rf in raw_files:
         file_path = "%s/%s" % (raw_files_path, rf)
         df_list.append(pd.read_excel(file_path))
-    dfp, _  = merge(df_list)
+    dfp, _  = merge(df_list, control_sample)
     return dfp
     
 
