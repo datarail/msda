@@ -179,7 +179,12 @@ def process(raw_files_path, control_sample=None):
     df_list = []
     for rf in raw_files:
         file_path = "%s/%s" % (raw_files_path, rf)
-        df_list.append(pd.read_excel(file_path))
+        if file_path.endswith('.xlsx'):
+            df_list.append(pd.read_excel(file_path))
+        elif file_path.endswith('.tsv'):
+            df_list.append(pd.read_table(file_path))
+        elif file_path.endswith('.csv'):
+            df_list.append(pd.read_csv(file_path))
     dfp, _  = merge(df_list, control_sample)
     return dfp
     
