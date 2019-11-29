@@ -18,7 +18,7 @@ def main():
           url='http://github.com/sorgerlab/msda',
           packages=find_packages(),
           install_requires=['numpy', 'pandas', 'scipy',
-                            'seaborn', 'statsmodels', 'scikit_learn'
+                            'seaborn', 'statsmodels', 'scikit_learn',
                             'mygene', 'requests', 'matplotlib'],
           cmdclass=versioneer.get_cmdclass(),
           keywords=['systems', 'biology', 'data', 'array', 'matrix'],
