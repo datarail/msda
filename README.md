@@ -1,6 +1,10 @@
 # Proteomics analysis pipeline - LSP
 The proteomics analysis pipeline consists of a suite of tools that support the design and analysis of mass-spec based proteomics and phosphoproteomic measurements. In addition to custom scripts, the suite also incorporates pre-existing tools such as GSEA, VIPER and Hotnet in order to make network level inference of differential pathway activity.
 
+## Funding
+
+The codebase featured in this repository was developed as part of the  "The Library of Integrated Network-Based Cellular Signatures" (LINCS) programe and funded by the NIH Common Fund program (U54 grant HL127365).
+
 # Installation
 To install the Python dependencies of this package, run
 ```bash
