@@ -1,3 +1,5 @@
+args = commandArgs(trailingOnly=TRUE)
+
 get_regulon <- function(regul_file){
   regul_mat <- read.delim(regul_file,sep = ',',as.is = T)
   regulon <- list()
@@ -9,6 +11,13 @@ get_regulon <- function(regul_file){
   return(regulon)
 }
 
+
 regulon_file <- args[1]
 regulon <- get_regulon(regulon_file)
 save(regulon, file = args[2])
+
+## Command line example
+## rscript filename.csv regulon.rdata
+
+
+                                    
